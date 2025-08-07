@@ -1,0 +1,67 @@
+exp,Temp,Temperature,Species,mass_change,mass 
+Experiment 1,11,C,Laminaria hyperborea,0,100
+Experiment 1,11,C,Laminaria hyperborea,0,100
+Experiment 1,11,C,Laminaria hyperborea,0,100
+Experiment 1,11,C,Laminaria ochroleuca,0,100
+Experiment 1,11,C,Laminaria ochroleuca,20,80
+Experiment 1,11,C,Laminaria ochroleuca,0,100
+Experiment 1,14,+3degC ,Laminaria hyperborea,5,95
+Experiment 1,14,+3degC ,Laminaria hyperborea,0,100
+Experiment 1,14,+3degC ,Laminaria hyperborea,10,90
+Experiment 1,14,+3degC ,Laminaria ochroleuca,0,100
+Experiment 1,14,+3degC ,Laminaria ochroleuca,5,95
+Experiment 1,14,+3degC ,Laminaria ochroleuca,0,100
+Experiment 1,17,+6degC ,Laminaria hyperborea,35,65
+Experiment 1,17,+6degC ,Laminaria hyperborea,25,75
+Experiment 1,17,+6degC ,Laminaria hyperborea,65,35
+Experiment 1,17,+6degC ,Laminaria ochroleuca,0,100
+Experiment 1,17,+6degC ,Laminaria ochroleuca,45,55
+Experiment 1,17,+6degC ,Laminaria ochroleuca,80,20
+Experiment 2,13,C,Laminaria hyperborea,3.03030303,96.96969697
+Experiment 2,13,C,Laminaria hyperborea,-6.451612903,106.4516129
+Experiment 2,13,C,Laminaria hyperborea,0,100
+Experiment 2,13,C,Laminaria hyperborea,3.125,96.875
+Experiment 2,16,+3degC ,Laminaria hyperborea,12.5,87.5
+Experiment 2,16,+3degC ,Laminaria hyperborea,-6.896551724,106.8965517
+Experiment 2,16,+3degC ,Laminaria hyperborea,0,100
+Experiment 2,16,+3degC ,Laminaria hyperborea,-14.28571429,114.2857143
+Experiment 2,19,+6degC ,Laminaria hyperborea,0,100
+Experiment 2,19,+6degC ,Laminaria hyperborea,32.14285714,67.85714286
+Experiment 2,19,+6degC ,Laminaria hyperborea,23.33333333,76.66666667
+Experiment 2,19,+6degC ,Laminaria hyperborea,-3.448275862,103.4482759
+Experiment 2,13,C,Laminaria ochroleuca,-6.666666667,106.6666667
+Experiment 2,13,C,Laminaria ochroleuca,0,100
+Experiment 2,13,C,Laminaria ochroleuca,3.225806452,96.77419355
+Experiment 2,13,C,Laminaria ochroleuca,0,100
+Experiment 2,16,+3degC ,Laminaria ochroleuca,-10.34482759,110.3448276
+Experiment 2,16,+3degC ,Laminaria ochroleuca,3.125,96.875
+Experiment 2,16,+3degC ,Laminaria ochroleuca,-6.666666667,106.6666667
+Experiment 2,16,+3degC ,Laminaria ochroleuca,6.451612903,93.5483871
+Experiment 2,19,+6degC ,Laminaria ochroleuca,37.93103448,62.06896552
+Experiment 2,19,+6degC ,Laminaria ochroleuca,-3.448275862,103.4482759
+Experiment 2,19,+6degC ,Laminaria ochroleuca,0,100
+Experiment 2,19,+6degC ,Laminaria ochroleuca,12.5,87.5
+Experiment 3,15,C,Laminaria hyperborea,5.555555556,94.44444444
+Experiment 3,15,C,Laminaria hyperborea,0,100
+Experiment 3,15,C,Laminaria hyperborea,0,100
+Experiment 3,15,C,Laminaria hyperborea,4.761904762,95.23809524
+Experiment 3,15,C,Laminaria ochroleuca,0,100
+Experiment 3,15,C,Laminaria ochroleuca,47.36842105,52.63157895
+Experiment 3,15,C,Laminaria ochroleuca,9.090909091,90.90909091
+Experiment 3,15,C,Laminaria ochroleuca,27.27272727,72.72727273
+Experiment 3,18,+3degC ,Laminaria hyperborea,0,100
+Experiment 3,18,+3degC ,Laminaria hyperborea,0,100
+Experiment 3,18,+3degC ,Laminaria hyperborea,5.263157895,94.73684211
+Experiment 3,18,+3degC ,Laminaria hyperborea,0,100
+Experiment 3,18,+3degC ,Laminaria ochroleuca,4.545454545,95.45454545
+Experiment 3,18,+3degC ,Laminaria ochroleuca,0,100
+Experiment 3,18,+3degC ,Laminaria ochroleuca,27.77777778,72.22222222
+Experiment 3,18,+3degC ,Laminaria ochroleuca,66.66666667,33.33333333
+Experiment 3,21,+6degC ,Laminaria hyperborea,0,100
+Experiment 3,21,+6degC ,Laminaria hyperborea,42.10526316,57.89473684
+Experiment 3,21,+6degC ,Laminaria hyperborea,11.11111111,88.88888889
+Experiment 3,21,+6degC ,Laminaria hyperborea,15,85
+Experiment 3,21,+6degC ,Laminaria ochroleuca,57.14285714,42.85714286
+Experiment 3,21,+6degC ,Laminaria ochroleuca,33.33333333,66.66666667
+Experiment 3,21,+6degC ,Laminaria ochroleuca,31.57894737,68.42105263
+Experiment 3,21,+6degC ,Laminaria ochroleuca,23.80952381,76.19047619
