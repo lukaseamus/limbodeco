@@ -1,3 +1,4 @@
+# 1. Prepare data ####
 require(tidyverse)
 require(magrittr)
 set.seed(100)
@@ -22,8 +23,12 @@ data %>%
                       nest_line = T) +
     theme_minimal()
 
+# 2. Model parameterisation ####
+# 2.1 Brouwer 1996 ####
+# 2.1.1 Visualisation ####
 data %>%
   filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
   ggplot() +
     geom_point(aes(t, p), shape = 16, alpha = 0.5) +
     geom_pointrange(data = . %>% 
@@ -34,12 +39,14 @@ data %>%
     facet_grid(~ treatment) +
     theme_minimal()
 
+# 2.1.2 Prior simulation ####
 # Constant model
 tibble(n = 1:1e3,
        alpha = rnorm( 1e3 , 0 , 0.01 ), 
        mu = rexp( 1e3 , 0.01 ),
        tau = rexp( 1e3 , 10 )) %>%
-  expand_grid(t = data %$% 
+  expand_grid(t = data %>%
+                filter(reference == "Brouwer 1996") %$% 
                 seq(min(t), max(t), length.out = 100)) %>%
   mutate(
     p = exp(
@@ -51,7 +58,8 @@ tibble(n = 1:1e3,
     )
   ) %>%
   ggplot(aes(t, p, group = n)) +
-    geom_hline(yintercept = data %$%
+    geom_hline(yintercept = data %>%
+                 filter(reference == "Brouwer 1996") %$%
                  range(p)) +
     geom_line(alpha = 0.05) +
     coord_cartesian(ylim = c(-0.1, 1.5), expand = F, clip = "off") +
@@ -63,7 +71,8 @@ tibble(n = 1:1e3,
        alpha = rnorm( 1e3 , 0 , 0.01 ), 
        mu = rexp( 1e3 , 0.01 ),
        tau = rexp( 1e3 , 10 )) %>%
-  expand_grid(t = data %$% 
+  expand_grid(t = data %>%
+                filter(reference == "Brouwer 1996") %$% 
                 seq(min(t), max(t), length.out = 100)) %>%
   mutate(
     p = exp(
@@ -75,14 +84,15 @@ tibble(n = 1:1e3,
     )
   ) %>%
   ggplot(aes(t, p, group = n)) +
-    geom_hline(yintercept = data %$%
+    geom_hline(yintercept = data %>%
+                 filter(reference == "Brouwer 1996") %$%
                  range(p)) +
     geom_line(alpha = 0.05) +
     coord_cartesian(ylim = c(-0.1, 1.5), expand = F, clip = "off") +
     theme_minimal() +
     theme(panel.grid = element_blank())
 
-# 1.2.3 Stan model ####
+# 2.1.3 Stan models ####
 require(cmdstanr)
 require(here)
 Brouwer_constant_model <- here("Stan", "Brouwer_constant.stan") %>% 
@@ -100,6 +110,7 @@ options(cmdstanr_max_rows = 100)
 Brouwer_constant_samples <- Brouwer_constant_model$sample(
           data = data %>%
             filter(reference == "Brouwer 1996") %>%
+            droplevels() %>%
             select(t, p, treatment) %>%
             compose_data(),
           chains = 8,
@@ -112,6 +123,7 @@ Brouwer_constant_samples <- Brouwer_constant_model$sample(
 Brouwer_relative_samples <- Brouwer_relative_model$sample(
           data = data %>%
             filter(reference == "Brouwer 1996") %>%
+            droplevels() %>%
             select(t, p, treatment) %>%
             compose_data(),
           chains = 8,
@@ -121,7 +133,7 @@ Brouwer_relative_samples <- Brouwer_relative_model$sample(
         ) %T>%
   print()
 
-# 1.2.4 Model checks ####
+# 2.1.4 Model checks ####
 # Rhat
 Brouwer_constant_samples$summary() %>%
   drop_na(rhat) %>%
@@ -129,7 +141,7 @@ Brouwer_constant_samples$summary() %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# 50% of rhat above 1.001. rhat = 1.00 ± 0.000510. Ok.
+# 90-100% of rhat above 1.001. rhat = 1.00 ± 0.00131. Ok.
 
 Brouwer_relative_samples$summary() %>%
   drop_na(rhat) %>%
@@ -137,7 +149,7 @@ Brouwer_relative_samples$summary() %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No rhat above 1.001. rhat = 1.00 ± 0.0000662. Great.
+# No rhat above 1.001. rhat = 1.00 ± 0.0000701. Great.
 
 # Chains
 require(bayesplot)
@@ -145,7 +157,7 @@ Brouwer_constant_samples$draws(format = "df") %>%
   mcmc_rank_overlay(pars = c("alpha[1]", "alpha[2]",
                              "mu[1]", "mu[2]", "tau",
                              "theta"))
-# Chains are ok.
+# Chains are not good.
 
 Brouwer_relative_samples$draws(format = "df") %>%
   mcmc_rank_overlay(pars = c("alpha[1]", "alpha[2]",
@@ -168,12 +180,13 @@ Brouwer_relative_samples$draws(format = "df") %>%
 # correlation between alpha and mu, but not as concerning. 
 # No bimodality. Generally looks more stable.
 
-# 1.2.5 Prior-posterior comparison ####
+# 2.1.5 Prior-posterior comparison ####
 source("functions.R")
 Brouwer_constant_prior <- prior_samples(
   model = Brouwer_constant_model,
   data = data %>% 
     filter(reference == "Brouwer 1996") %>%
+    droplevels() %>%
     select(t, p, treatment) %>%
     compose_data()
   )
@@ -182,6 +195,7 @@ Brouwer_relative_prior <- prior_samples(
   model = Brouwer_relative_model,
   data = data %>% 
     filter(reference == "Brouwer 1996") %>%
+    droplevels() %>%
     select(t, p, treatment) %>%
     compose_data()
 )
@@ -191,6 +205,7 @@ Brouwer_constant_prior %>%
     posterior_samples = Brouwer_constant_samples,
     group = data %>% 
       filter(reference == "Brouwer 1996") %>%
+      droplevels() %>%
       select(treatment),
     parameters = c("alpha[treatment]", "mu[treatment]", 
                    "tau", "theta"),
@@ -205,6 +220,7 @@ Brouwer_relative_prior %>%
     posterior_samples = Brouwer_relative_samples,
     group = data %>% 
       filter(reference == "Brouwer 1996") %>%
+      droplevels() %>%
       select(treatment),
     parameters = c("alpha[treatment]", "mu[treatment]", 
                    "tau", "theta"),
@@ -213,7 +229,8 @@ Brouwer_relative_prior %>%
   prior_posterior_plot(group_name = "treatment", ridges = FALSE)
 # Looks much more stable.
 
-# 1.2.6 Prediction ####
+# 2.1.6 Prediction ####
+# Parameter posteriors
 Brouwer_constant_prior_posterior <- Brouwer_constant_prior %>% 
   prior_posterior_draws(
     posterior_samples = Brouwer_constant_samples,
@@ -247,7 +264,8 @@ Brouwer_relative_prior_posterior <- Brouwer_relative_prior %>%
 # Predict across predictor range
 Brouwer_constant_prediction <- Brouwer_constant_prior_posterior %>%
   spread_continuous(data = data %>% 
-                      filter(reference == "Brouwer 1996"), 
+                      filter(reference == "Brouwer 1996") %>%
+                      droplevels(), 
                     predictor_name = "t",
                     group_name = "treatment") %>%
   mutate(
@@ -264,7 +282,8 @@ Brouwer_constant_prediction <- Brouwer_constant_prior_posterior %>%
 
 Brouwer_relative_prediction <- Brouwer_relative_prior_posterior %>%
   spread_continuous(data = data %>% 
-                      filter(reference == "Brouwer 1996"), 
+                      filter(reference == "Brouwer 1996") %>%
+                      droplevels(), 
                     predictor_name = "t",
                     group_name = "treatment") %>%
   mutate(
@@ -292,8 +311,10 @@ Brouwer_relative_prediction_summary <- Brouwer_relative_prediction %>%
   mean_qi(p_mu, p, .width = c(.5, .8, .9)) %T>%
   print()
 
-# Mean prediction
+# Viusalise mean predictions
 data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
   ggplot() +
   geom_point(aes(t, p), 
              shape = 16, alpha = 0.5) +
@@ -314,6 +335,8 @@ data %>%
   theme_minimal()
 
 data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
   ggplot() +
   geom_point(aes(t, p), 
              shape = 16, alpha = 0.5) +
@@ -334,8 +357,10 @@ data %>%
   theme_minimal()
 
 
-# Response prediction
+# Visualise predictions of new observations
 data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
   ggplot() +
   geom_point(aes(t, p), 
              shape = 16, alpha = 0.5) +
@@ -356,6 +381,8 @@ data %>%
   theme_minimal()
 
 data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
   ggplot() +
   geom_point(aes(t, p), 
              shape = 16, alpha = 0.5) +
@@ -376,9 +403,11 @@ data %>%
   theme_minimal()
 
 # While the constant model seems to fit the data better,
-# it generally looks less stable, the transition being very 
+# especially the gradual decline in the control, it 
+# generally looks less stable, the transition being very 
 # jagged, almost like a piecewise model. Let's look at LOO.
 
+# 2.1.7 Leave-one-out cross-validation ####
 require(loo)
 loo_compare(
   list(
@@ -389,18 +418,23 @@ loo_compare(
   as.data.frame() %>%
   rownames_to_column("model") %>%
   as_tibble()
-# The relative model wins here too. Let's try one more dataset.
+# The relative model wins here too. Let's try a very different
+# dataset to be sure.
 
+# 2.2 Frontier et al. 2022 ####
+# 2.2.1 Visualisation ####
 data %>%
   filter(reference == "Frontier et al. 2022") %>%
+  droplevels() %>%
   ggplot() +
     geom_point(aes(t, p), shape = 16, alpha = 0.3) +
     facet_grid(treatment ~ species) +
     theme_minimal()
 
+# 2.2.2 Prior simulation ####
 # Constant model
 tibble(n = 1:1e3,
-       alpha = rnorm( 1e3 , 0 , 0.005 ), 
+       alpha = rnorm( 1e3 , 0 , 0.01 ), 
        mu = rgamma( 1e3 , 30^2 / 15^2 , 30 / 15^2 ),
        tau = rgamma( 1e3 , 0.1^2 / 0.05^2 , 0.1 / 0.05^2 )) %>%
   expand_grid(t = data %>%
@@ -426,7 +460,7 @@ tibble(n = 1:1e3,
 
 # Relative model
 tibble(n = 1:1e3,
-       alpha = rnorm( 1e3 , 0 , 0.005 ), 
+       alpha = rnorm( 1e3 , 0 , 0.01 ), 
        mu = rgamma( 1e3 , 30^2 / 15^2 , 30 / 15^2 ),
        tau = rgamma( 1e3 , 0.1^2 / 0.05^2 , 0.1 / 0.05^2 )) %>%
   expand_grid(t = data %>%
@@ -450,7 +484,7 @@ tibble(n = 1:1e3,
     theme_minimal() +
     theme(panel.grid = element_blank())
 
-# 1.2.3 Stan model ####
+# 2.2.3 Stan models ####
 Frontier_constant_model <- here("Stan", "Frontier_constant.stan") %>% 
   read_file() %>%
   write_stan_file() %>%
@@ -461,7 +495,6 @@ Frontier_relative_model <- here("Stan", "Frontier_relative.stan") %>%
   write_stan_file() %>%
   cmdstan_model()
 
-options(cmdstanr_max_rows = 100)
 Frontier_constant_samples <- Frontier_constant_model$sample(
           data = data %>%
             filter(reference == "Frontier et al. 2022") %>%
@@ -488,7 +521,7 @@ Frontier_relative_samples <- Frontier_relative_model$sample(
         ) %T>%
   print()
 
-# 1.2.4 Model checks ####
+# 2.2.4 Model checks ####
 # Rhat
 Frontier_constant_samples$summary() %>%
   drop_na(rhat) %>%
@@ -496,7 +529,7 @@ Frontier_constant_samples$summary() %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# 80% of rhat above 1.001. rhat = 1.13 ± 0.103. Not good.
+# 90-100% of rhat above 1.001. rhat = 1.38 ± 0.258. Not good.
 
 Frontier_relative_samples$summary() %>%
   drop_na(rhat) %>%
@@ -504,7 +537,7 @@ Frontier_relative_samples$summary() %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No rhat above 1.001. rhat = 1.00 ± 0.0000557. Great.
+# No rhat above 1.001. rhat = 1.00 ± 0.0000458. Great.
 
 # Chains
 Frontier_constant_samples$draws(format = "df") %>%
@@ -513,7 +546,7 @@ Frontier_constant_samples$draws(format = "df") %>%
                              "mu[2,1]", "mu[2,2]",
                              "tau[1]", "tau[2]", 
                              "theta"))
-# Chains are ok.
+# Chains are bad.
 
 Frontier_relative_samples$draws(format = "df") %>%
   mcmc_rank_overlay(pars = c("alpha[1]", "alpha[2]",
@@ -532,7 +565,8 @@ Frontier_constant_samples$draws(format = "df") %>%
   mcmc_pairs(pars = c("alpha[2]", "mu[2,1]", "tau[2]", "theta"))
 Frontier_constant_samples$draws(format = "df") %>%
   mcmc_pairs(pars = c("alpha[2]", "mu[2,2]", "tau[2]", "theta"))
-# Pairs don't look great. Some bimodality, and non-identifiability.
+# Pairs don't look great. Some bimodality in theta (!?) as well
+# as the other parameters, and non-identifiability.
 
 Frontier_relative_samples$draws(format = "df") %>%
   mcmc_pairs(pars = c("alpha[1]", "mu[1,1]", "tau[1]", "theta"))
@@ -544,9 +578,9 @@ Frontier_relative_samples$draws(format = "df") %>%
   mcmc_pairs(pars = c("alpha[2]", "mu[2,2]", "tau[2]", "theta"))
 # Some positive correlation between mu and tau, and negative
 # correlation between alpha and mu, but not as concerning. 
-# No bimodality. Generally looks more stable.
+# No bimodality. Generally looks very stable.
 
-# 1.2.5 Prior-posterior comparison ####
+# 2.2.5 Prior-posterior comparison ####
 Frontier_constant_prior <- prior_samples(
   model = Frontier_constant_model,
   data = data %>%
@@ -570,18 +604,17 @@ Frontier_constant_prior %>%
     posterior_samples = Frontier_constant_samples,
     group = data %>%
       filter(reference == "Frontier et al. 2022") %>%
+      droplevels() %>%
       select(species, treatment),
     parameters = c("alpha[species]", "mu[species, treatment]", 
                    "tau[species]", "theta"),
     format = "long"
-  ) %>% {
+  ) %T>% {
     prior_posterior_plot(., group_name = "species", ridges = FALSE) %>%
       print()
     } %>%
   prior_posterior_plot(group_name = "treatment", ridges = FALSE)
-
-
-# Some near-bimodality. mu has a strange sharp posterior.
+# Some bimodality. mu has a strange sharp posterior.
 # Generally looks unstable.
 
 Frontier_relative_prior %>% 
@@ -589,51 +622,55 @@ Frontier_relative_prior %>%
     posterior_samples = Frontier_relative_samples,
     group = data %>%
       filter(reference == "Frontier et al. 2022") %>%
-      select(species),
+      droplevels() %>%
+      select(species, treatment),
     parameters = c("alpha[species]", "mu[species, treatment]", 
                    "tau[species]", "theta"),
     format = "long"
-  ) %>%
-  prior_posterior_plot(group_name = "species", ridges = FALSE)
-# Looks much more stable.
+  ) %T>% {
+    prior_posterior_plot(., group_name = "species", ridges = FALSE) %>%
+      print()
+    } %>%
+  prior_posterior_plot(group_name = "treatment", ridges = FALSE)
+# No bimodality. Looks much more stable.
 
-# 1.2.6 Prediction ####
-Brouwer_constant_prior_posterior <- Brouwer_constant_prior %>% 
+# 2.2.6 Prediction ####
+# Parameter posteriors
+Frontier_constant_prior_posterior <- Frontier_constant_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Brouwer_constant_samples,
-    parameters = c("alpha[treatment]", "mu[treatment]", 
-                   "tau", "theta"),
+    posterior_samples = Frontier_constant_samples,
+    parameters = c("alpha[species]", "mu[species, treatment]", 
+                   "tau[species]", "theta"),
     format = "short"
   ) %>% 
-  # Since I want only one grouping variable, there is redundancy in distribution.
-  filter(!(treatment == "Pre-killed" & 
-             distribution == "prior")) %>% # Remove one redundant prior.
-  mutate(treatment = if_else(distribution == "prior", # Add Prior to treatment
+  filter(!(treatment %in% c("1.5m", "3m") &
+             distribution == "prior")) %>% 
+  mutate(treatment = if_else(distribution == "prior",
                              "Prior", treatment) %>% fct()) %>%
   select(-distribution) %T>%
   print()
 
-Brouwer_relative_prior_posterior <- Brouwer_relative_prior %>% 
+Frontier_relative_prior_posterior <- Frontier_relative_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Brouwer_relative_samples,
-    parameters = c("alpha[treatment]", "mu[treatment]", 
-                   "tau", "theta"),
+    posterior_samples = Frontier_relative_samples,
+    parameters = c("alpha[species]", "mu[species, treatment]", 
+                   "tau[species]", "theta"),
     format = "short"
   ) %>% 
-  # Since I want only one grouping variable, there is redundancy in distribution.
-  filter(!(treatment == "Pre-killed" & 
-             distribution == "prior")) %>% # Remove one redundant prior.
-  mutate(treatment = if_else(distribution == "prior", # Add Prior to treatment
+  filter(!(treatment %in% c("1.5m", "3m") &
+             distribution == "prior")) %>% 
+  mutate(treatment = if_else(distribution == "prior",
                              "Prior", treatment) %>% fct()) %>%
   select(-distribution) %T>%
   print()
 
 # Predict across predictor range
-Brouwer_constant_prediction <- Brouwer_constant_prior_posterior %>%
+Frontier_constant_prediction <- Frontier_constant_prior_posterior %>%
   spread_continuous(data = data %>% 
-                      filter(reference == "Brouwer 1996"), 
-                    predictor_name = "t",
-                    group_name = "treatment") %>%
+                      filter(reference == "Frontier et al. 2022") %>%
+                      droplevels(), 
+                    # Same t range for all variables so no grouping needed
+                    predictor_name = "t") %>% 
   mutate(
     p_mu = exp(
       t * alpha - ( alpha + tau ) * 
@@ -646,11 +683,11 @@ Brouwer_constant_prediction <- Brouwer_constant_prior_posterior %>%
   ) %T>%
   print()
 
-Brouwer_relative_prediction <- Brouwer_relative_prior_posterior %>%
+Frontier_relative_prediction <- Frontier_relative_prior_posterior %>%
   spread_continuous(data = data %>% 
-                      filter(reference == "Brouwer 1996"), 
-                    predictor_name = "t",
-                    group_name = "treatment") %>%
+                      filter(reference == "Frontier et al. 2022") %>%
+                      droplevels(), 
+                    predictor_name = "t") %>%
   mutate(
     p_mu = exp(
       t * alpha - ( alpha + tau ) * mu / 5 * 
@@ -664,105 +701,88 @@ Brouwer_relative_prediction <- Brouwer_relative_prior_posterior %>%
   print()
 
 # Summarise predictions
-Brouwer_constant_prediction_summary <- Brouwer_constant_prediction %>%
-  # filter(is.finite(p_mu) & is.finite(p)) %>%
-  group_by(t, treatment) %>%
+Frontier_constant_prediction_summary <- Frontier_constant_prediction %>%
+  group_by(t, species, treatment) %>%
   mean_qi(p_mu, p, .width = c(.5, .8, .9)) %T>%
   print()
 
-Brouwer_relative_prediction_summary <- Brouwer_relative_prediction %>%
-  # filter(is.finite(p_mu) & is.finite(p)) %>%
-  group_by(t, treatment) %>%
+Frontier_relative_prediction_summary <- Frontier_relative_prediction %>%
+  group_by(t, species, treatment) %>%
   mean_qi(p_mu, p, .width = c(.5, .8, .9)) %T>%
   print()
 
-# Mean prediction
+# Visualise mean predictions
 data %>%
+  filter(reference == "Frontier et al. 2022") %>%
+  droplevels() %>%
   ggplot() +
-  geom_point(aes(t, p), 
-             shape = 16, alpha = 0.5) +
-  geom_pointrange(data = . %>% 
-                    distinct(t, p_mean, p_sd, treatment),
-                  aes(t, p_mean,
-                      ymin = p_mean - p_sd,
-                      ymax = p_mean + p_sd)) +
-  geom_line(data = Brouwer_constant_prediction_summary %>%
-              filter(treatment != "Prior"),
-            aes(t, p_mu)) +
-  geom_ribbon(data = Brouwer_constant_prediction_summary %>%
+    geom_point(aes(t, p), shape = 16, alpha = 0.3) +
+    geom_line(data = Frontier_constant_prediction_summary %>%
                 filter(treatment != "Prior"),
-              aes(t, ymin = p_mu.lower, ymax = p_mu.upper, 
-                  alpha = factor(.width))) +
-  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-  facet_grid(~ treatment) +
-  theme_minimal()
+              aes(t, p_mu)) +
+    geom_ribbon(data = Frontier_constant_prediction_summary %>%
+                  filter(treatment != "Prior"),
+                aes(t, ymin = p_mu.lower, ymax = p_mu.upper, 
+                    alpha = factor(.width))) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    facet_grid(treatment ~ species) +
+    theme_minimal()
 
 data %>%
+  filter(reference == "Frontier et al. 2022") %>%
+  droplevels() %>%
   ggplot() +
-  geom_point(aes(t, p), 
-             shape = 16, alpha = 0.5) +
-  geom_pointrange(data = . %>% 
-                    distinct(t, p_mean, p_sd, treatment),
-                  aes(t, p_mean,
-                      ymin = p_mean - p_sd,
-                      ymax = p_mean + p_sd)) +
-  geom_line(data = Brouwer_relative_prediction_summary %>%
-              filter(treatment != "Prior"),
-            aes(t, p_mu)) +
-  geom_ribbon(data = Brouwer_relative_prediction_summary %>%
+    geom_point(aes(t, p), shape = 16, alpha = 0.3) +
+    geom_line(data = Frontier_relative_prediction_summary %>%
                 filter(treatment != "Prior"),
-              aes(t, ymin = p_mu.lower, ymax = p_mu.upper, 
-                  alpha = factor(.width))) +
-  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-  facet_grid(~ treatment) +
-  theme_minimal()
+              aes(t, p_mu)) +
+    geom_ribbon(data = Frontier_relative_prediction_summary %>%
+                  filter(treatment != "Prior"),
+                aes(t, ymin = p_mu.lower, ymax = p_mu.upper, 
+                    alpha = factor(.width))) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    facet_grid(treatment ~ species) +
+    theme_minimal()
 
-
-# Response prediction
+# Visualise predictions for new observations
 data %>%
+  filter(reference == "Frontier et al. 2022") %>%
+  droplevels() %>%
   ggplot() +
-  geom_point(aes(t, p), 
-             shape = 16, alpha = 0.5) +
-  geom_pointrange(data = . %>% 
-                    distinct(t, p_mean, p_sd, treatment),
-                  aes(t, p_mean,
-                      ymin = p_mean - p_sd,
-                      ymax = p_mean + p_sd)) +
-  geom_line(data = Brouwer_constant_prediction_summary %>%
-              filter(treatment != "Prior"),
-            aes(t, p)) +
-  geom_ribbon(data = Brouwer_constant_prediction_summary %>%
+    geom_point(aes(t, p), shape = 16, alpha = 0.3) +
+    geom_line(data = Frontier_constant_prediction_summary %>%
                 filter(treatment != "Prior"),
-              aes(t, ymin = p.lower, ymax = p.upper, 
-                  alpha = factor(.width))) +
-  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-  facet_grid(~ treatment) +
-  theme_minimal()
+              aes(t, p)) +
+    geom_ribbon(data = Frontier_constant_prediction_summary %>%
+                  filter(treatment != "Prior"),
+                aes(t, ymin = p.lower, ymax = p.upper, 
+                    alpha = factor(.width))) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    facet_grid(treatment ~ species) +
+    theme_minimal()
 
 data %>%
+  filter(reference == "Frontier et al. 2022") %>%
+  droplevels() %>%
   ggplot() +
-  geom_point(aes(t, p), 
-             shape = 16, alpha = 0.5) +
-  geom_pointrange(data = . %>% 
-                    distinct(t, p_mean, p_sd, treatment),
-                  aes(t, p_mean,
-                      ymin = p_mean - p_sd,
-                      ymax = p_mean + p_sd)) +
-  geom_line(data = Brouwer_relative_prediction_summary %>%
-              filter(treatment != "Prior"),
-            aes(t, p)) +
-  geom_ribbon(data = Brouwer_relative_prediction_summary %>%
+    geom_point(aes(t, p), shape = 16, alpha = 0.3) +
+    geom_line(data = Frontier_relative_prediction_summary %>%
                 filter(treatment != "Prior"),
-              aes(t, ymin = p.lower, ymax = p.upper, 
-                  alpha = factor(.width))) +
-  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-  facet_grid(~ treatment) +
-  theme_minimal()
+              aes(t, p)) +
+    geom_ribbon(data = Frontier_relative_prediction_summary %>%
+                  filter(treatment != "Prior"),
+                aes(t, ymin = p.lower, ymax = p.upper, 
+                    alpha = factor(.width))) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    facet_grid(treatment ~ species) +
+    theme_minimal()
 
 # While the constant model seems to fit the data better,
-# it generally looks less stable, the transition being very 
+# especially the gradual decline in the control, it 
+# generally looks less stable, the transition being very 
 # jagged, almost like a piecewise model. Let's look at LOO.
 
+# 2.2.7 Leave-one-out cross-validation ####
 loo_compare(
   list(
     constant = Frontier_constant_samples$loo(cores = parallel::detectCores()),
@@ -774,10 +794,28 @@ loo_compare(
   as_tibble()
 # The relative model wins here too.
 
+# 3. More examples ####
+# 3.1 Frontier et al. 2021 ####
+
+# 3.2 de Bettignies et al. 2020 ####
+
+# 3.3 Hamersley et al. 2015 ####
+
+# 3.4 Albright et al. 1982 ####
+
+# 3.5 Birch et al. 1982 ####
+
+# 3.5 Bourguès et al. 1996 ####
+
+# 4. Visualisation ####
+# 4.1 Physiology ####
+
+# 4.2 Light ####
+
+# 4.3 Season ####
 
 
 
-# 1.2.7 Visualisation ####
 # Summarise parameters for annotation
 require(glue)
 ratio_annotation <- ratio_prior_posterior %>%
