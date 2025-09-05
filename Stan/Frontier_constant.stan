@@ -17,7 +17,7 @@ parameters{
 
 model{
   // Priors
-  alpha ~ normal( 0 , 0.005 );
+  alpha ~ normal( 0 , 0.01 );
   to_vector(mu) ~ gamma( square(30) / square(15) , 30 / square(15) );
   tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
   theta ~ exponential( 10 );
