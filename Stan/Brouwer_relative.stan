@@ -1,3 +1,12 @@
+functions{
+  // Beta prime log probability density function
+  real betap_lpdf( real y , real alpha , real beta ) {
+    return ( alpha - 1 ) * log( y )
+    - ( alpha + beta ) * log1p( y ) -
+    lbeta( alpha , beta );
+  }
+}
+
 data{
   int n;
   vector[n] t;
@@ -7,33 +16,52 @@ data{
 }
 
 parameters{
+  // Parameters describing mean
   vector[n_treatment] alpha;
   vector<lower=0>[n_treatment] mu;
   real<lower=0> tau;
-  real<lower=0> theta;
+  
+  // Parameters describing precision
+  real<lower=0> nu_max;
+  vector<lower=0>[n_treatment] nu_beta;
+  vector<lower=0>[n_treatment] nu_min;
 }
 
 model{
-  // Priors
+  // Priors for parameters describing mean
   alpha ~ normal( 0 , 0.01 );
   mu ~ exponential( 0.01 );
   tau ~ exponential( 10 );
-  theta ~ exponential( 10 );
+  
+  // Priors for parameters describing precision
+  nu_max ~ gamma( square(1e5) / square(1e4) , 1e5 / square(1e4) );
+  nu_beta ~ exponential( 10 );
+  nu_min ~ gamma( square(30) / square(20) , 30 / square(20) );
   
   // Model
+  // Function describing mean
   vector[n] p_mu = exp(
       t .* alpha[treatment] - 
       ( alpha[treatment] + tau ) .* mu[treatment] ./ 5 .* (
         log1p_exp( 5 ./ mu[treatment] .* ( t - mu[treatment] ) ) -
         log1p_exp( -5 )
       )
-  );
+    );
   
-  // Gamma likelihood
-  p ~ gamma( p_mu / theta , 1 / theta );
+  // Function describing precision
+  vector[n] nu = nu_min[treatment] + exp(
+      log( nu_max - nu_min[treatment] )
+      - nu_beta[treatment] .* t
+    );
+    
+  // Beta prime likelihood
+  for ( i in 1:n ) {
+    p[i] ~ betap( p_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
+  }
 }
 
 generated quantities{
+  // Calculate and save mean
   vector[n] p_mu;
   for ( i in 1:n ) {
     p_mu[i] = exp(
@@ -42,11 +70,21 @@ generated quantities{
         log1p_exp( 5 / mu[treatment[i]] * ( t[i] - mu[treatment[i]] ) ) -
         log1p_exp( -5 )
       )
-  );
+    );
   }
   
+  // Calculate and save precision
+  vector[n] nu;
+  for ( i in 1:n ) {
+    nu[i] = nu_min[treatment[i]] + exp(
+      log( nu_max - nu_min[treatment[i]] )
+      - nu_beta[treatment[i]] * t[i]
+    );
+  }
+  
+  // Calculate and save log likelihood
   vector[n] log_lik;
   for ( i in 1:n ) {
-    log_lik[i] = gamma_lpdf( p[i] | p_mu[i] / theta , 1 / theta );
+    log_lik[i] = betap_lpdf( p[i] | p_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
   }
 }
