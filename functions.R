@@ -62,7 +62,6 @@ prior_posterior_draws <- function(prior_samples, posterior_samples,
         mutate(distribution = "prior" %>% factor()) %>%
         bind_rows(
           posterior_samples %>%
-            tidybayes::recover_types(group) %>%
             tidybayes::gather_draws(!!!parameters_list) %>%
             ungroup() %>%
             mutate(distribution = "posterior" %>% factor())
@@ -75,7 +74,6 @@ prior_posterior_draws <- function(prior_samples, posterior_samples,
         mutate(distribution = "prior" %>% factor()) %>%
         bind_rows(
           posterior_samples %>%
-            tidybayes::recover_types(group) %>%
             tidybayes::spread_draws(!!!parameters_list) %>%
             ungroup() %>%
             mutate(distribution = "posterior" %>% factor())

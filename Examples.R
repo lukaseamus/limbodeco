@@ -141,7 +141,7 @@ Brouwer_constant_samples$summary() %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# 90-100% of rhat above 1.001. rhat = 1.00 ± 0.00131. Ok.
+# No rhat above 1.001. rhat = 1.00 ± 0.0000874. Great.
 
 Brouwer_relative_samples$summary() %>%
   drop_na(rhat) %>%
@@ -149,36 +149,45 @@ Brouwer_relative_samples$summary() %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No rhat above 1.001. rhat = 1.00 ± 0.0000701. Great.
+# No rhat above 1.001. rhat = 1.00 ± 0.0000968. Great.
 
 # Chains
 require(bayesplot)
 Brouwer_constant_samples$draws(format = "df") %>%
   mcmc_rank_overlay(pars = c("alpha[1]", "alpha[2]",
                              "mu[1]", "mu[2]", "tau",
-                             "theta"))
-# Chains are not good.
+                             "nu_max",
+                             "nu_beta[1]", "nu_beta[2]",
+                             "nu_min[1]", "nu_min[2]"))
+# Chains are good.
 
 Brouwer_relative_samples$draws(format = "df") %>%
   mcmc_rank_overlay(pars = c("alpha[1]", "alpha[2]",
                              "mu[1]", "mu[2]", "tau",
-                             "theta"))
+                             "nu_max",
+                             "nu_beta[1]", "nu_beta[2]",
+                             "nu_min[1]", "nu_min[2]"))
 # Chains are good.
 
 # Pairs
 Brouwer_constant_samples$draws(format = "df") %>%
-  mcmc_pairs(pars = c("alpha[1]", "mu[1]", "tau", "theta"))
+  mcmc_pairs(pars = c("alpha[1]", "mu[1]", "tau", 
+                      "nu_max", "nu_beta[1]", "nu_min[1]"))
 Brouwer_constant_samples$draws(format = "df") %>%
-  mcmc_pairs(pars = c("alpha[2]", "mu[2]", "tau", "theta"))
+  mcmc_pairs(pars = c("alpha[2]", "mu[2]", "tau", 
+                      "nu_max", "nu_beta[2]", "nu_min[2]"))
 # Pairs don't look great. Some bimodality, and non-identifiability.
 
 Brouwer_relative_samples$draws(format = "df") %>%
-  mcmc_pairs(pars = c("alpha[1]", "mu[1]", "tau", "theta"))
+  mcmc_pairs(pars = c("alpha[1]", "mu[1]", "tau", 
+                      "nu_max", "nu_beta[1]", "nu_min[1]"))
 Brouwer_relative_samples$draws(format = "df") %>%
-  mcmc_pairs(pars = c("alpha[2]", "mu[2]", "tau", "theta"))
-# Some positive correlation between mu and tau, and negative
-# correlation between alpha and mu, but not as concerning. 
-# No bimodality. Generally looks more stable.
+  mcmc_pairs(pars = c("alpha[2]", "mu[2]", "tau", 
+                      "nu_max", "nu_beta[2]", "nu_min[2]"))
+# Some weak positive correlation between mu and tau, 
+# and weak negative correlation between alpha and mu, 
+# but not as concerning. No bimodality. Generally 
+# looks more stable.
 
 # 2.1.5 Prior-posterior comparison ####
 source("functions.R")
@@ -208,7 +217,8 @@ Brouwer_constant_prior %>%
       droplevels() %>%
       select(treatment),
     parameters = c("alpha[treatment]", "mu[treatment]", 
-                   "tau", "theta"),
+                   "tau", "nu_max", "nu_beta[treatment]",
+                   "nu_min[treatment]"),
     format = "long"
     ) %>%
   prior_posterior_plot(group_name = "treatment", ridges = FALSE)
@@ -223,7 +233,8 @@ Brouwer_relative_prior %>%
       droplevels() %>%
       select(treatment),
     parameters = c("alpha[treatment]", "mu[treatment]", 
-                   "tau", "theta"),
+                   "tau", "nu_max", "nu_beta[treatment]",
+                   "nu_min[treatment]"),
     format = "long"
   ) %>%
   prior_posterior_plot(group_name = "treatment", ridges = FALSE)
@@ -234,8 +245,13 @@ Brouwer_relative_prior %>%
 Brouwer_constant_prior_posterior <- Brouwer_constant_prior %>% 
   prior_posterior_draws(
     posterior_samples = Brouwer_constant_samples,
+    group = data %>% 
+      filter(reference == "Brouwer 1996") %>%
+      droplevels() %>%
+      select(treatment),
     parameters = c("alpha[treatment]", "mu[treatment]", 
-                   "tau", "theta"),
+                   "tau", "nu_max", "nu_beta[treatment]",
+                   "nu_min[treatment]"),
     format = "short"
   ) %>% 
   # Since I want only one grouping variable, there is redundancy in distribution.
@@ -249,8 +265,13 @@ Brouwer_constant_prior_posterior <- Brouwer_constant_prior %>%
 Brouwer_relative_prior_posterior <- Brouwer_relative_prior %>% 
   prior_posterior_draws(
     posterior_samples = Brouwer_relative_samples,
+    group = data %>% 
+      filter(reference == "Brouwer 1996") %>%
+      droplevels() %>%
+      select(treatment),
     parameters = c("alpha[treatment]", "mu[treatment]", 
-                   "tau", "theta"),
+                   "tau", "nu_max", "nu_beta[treatment]",
+                   "nu_min[treatment]"),
     format = "short"
   ) %>% 
   # Since I want only one grouping variable, there is redundancy in distribution.
@@ -262,6 +283,7 @@ Brouwer_relative_prior_posterior <- Brouwer_relative_prior %>%
   print()
 
 # Predict across predictor range
+require(extraDistr) # R doesn't have a native beta prime function
 Brouwer_constant_prediction <- Brouwer_constant_prior_posterior %>%
   spread_continuous(data = data %>% 
                       filter(reference == "Brouwer 1996") %>%
@@ -276,7 +298,9 @@ Brouwer_constant_prediction <- Brouwer_constant_prior_posterior %>%
             ( 1 + exp( -mu ) )
         )
     ),
-    p = rgamma( n() , p_mu / theta , 1 / theta )
+    k = ( alpha + tau ) / ( 1 + exp( t - mu ) ) - tau,
+    nu = nu_min + exp( log( nu_max - nu_min ) - nu_beta * t ),
+    p = rbetapr( n() , p_mu * ( 1 + nu ) , 2 + nu )
   ) %T>%
   print()
 
@@ -294,21 +318,23 @@ Brouwer_relative_prediction <- Brouwer_relative_prior_posterior %>%
             ( 1 + exp( -5 ) )
         )
     ),
-    p = rgamma( n() , p_mu / theta , 1 / theta )
+    k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
+    nu = nu_min + exp( log( nu_max - nu_min ) - nu_beta * t ),
+    p = rbetapr( n() , p_mu * ( 1 + nu ) , 2 + nu )
   ) %T>%
   print()
 
 # Summarise predictions
 Brouwer_constant_prediction_summary <- Brouwer_constant_prediction %>%
-  # filter(is.finite(p_mu) & is.finite(p)) %>%
+  drop_na() %>%
   group_by(t, treatment) %>%
-  mean_qi(p_mu, p, .width = c(.5, .8, .9)) %T>%
+  median_qi(p_mu, k, nu, p, .width = c(.5, .8, .9)) %T>%
   print()
 
 Brouwer_relative_prediction_summary <- Brouwer_relative_prediction %>%
-  # filter(is.finite(p_mu) & is.finite(p)) %>%
+  drop_na() %>%
   group_by(t, treatment) %>%
-  mean_qi(p_mu, p, .width = c(.5, .8, .9)) %T>%
+  median_qi(p_mu, k, nu, p, .width = c(.5, .8, .9)) %T>%
   print()
 
 # Viusalise mean predictions
@@ -625,7 +651,8 @@ Frontier_relative_prior %>%
       droplevels() %>%
       select(species, treatment),
     parameters = c("alpha[species]", "mu[species, treatment]", 
-                   "tau[species]", "theta"),
+                   "tau[species]", "theta_alpha[species, treatment]", 
+                   "theta_beta[species, treatment]"),
     format = "long"
   ) %T>% {
     prior_posterior_plot(., group_name = "species", ridges = FALSE) %>%
@@ -639,6 +666,10 @@ Frontier_relative_prior %>%
 Frontier_constant_prior_posterior <- Frontier_constant_prior %>% 
   prior_posterior_draws(
     posterior_samples = Frontier_constant_samples,
+    group = data %>%
+      filter(reference == "Frontier et al. 2022") %>%
+      droplevels() %>%
+      select(species, treatment),
     parameters = c("alpha[species]", "mu[species, treatment]", 
                    "tau[species]", "theta"),
     format = "short"
@@ -653,8 +684,13 @@ Frontier_constant_prior_posterior <- Frontier_constant_prior %>%
 Frontier_relative_prior_posterior <- Frontier_relative_prior %>% 
   prior_posterior_draws(
     posterior_samples = Frontier_relative_samples,
+    group = data %>%
+      filter(reference == "Frontier et al. 2022") %>%
+      droplevels() %>%
+      select(species, treatment),
     parameters = c("alpha[species]", "mu[species, treatment]", 
-                   "tau[species]", "theta"),
+                   "tau[species]", "nu_alpha", 
+                   "nu_beta[species, treatment]", "nu_gamma"),
     format = "short"
   ) %>% 
   filter(!(treatment %in% c("1.5m", "3m") &
@@ -665,6 +701,7 @@ Frontier_relative_prior_posterior <- Frontier_relative_prior %>%
   print()
 
 # Predict across predictor range
+require(extraDistr)
 Frontier_constant_prediction <- Frontier_constant_prior_posterior %>%
   spread_continuous(data = data %>% 
                       filter(reference == "Frontier et al. 2022") %>%
@@ -679,7 +716,8 @@ Frontier_constant_prediction <- Frontier_constant_prior_posterior %>%
             ( 1 + exp( -mu ) )
         )
     ),
-    p = rgamma( n() , p_mu / theta , 1 / theta )
+    # p = rgamma( n() , p_mu / theta , 1 / theta ),
+    p = rbetapr( n() , p_mu * (1 + nu) , 2 + nu )
   ) %T>%
   print()
 
@@ -696,7 +734,8 @@ Frontier_relative_prediction <- Frontier_relative_prior_posterior %>%
             ( 1 + exp( -5 ) )
         )
     ),
-    p = rgamma( n() , p_mu / theta , 1 / theta )
+    nu = nu_gamma + exp( log( nu_alpha ) - nu_beta * t ),
+    p = rbetapr( n() , p_mu * (1 + nu) , 2 + nu )
   ) %T>%
   print()
 
@@ -708,7 +747,7 @@ Frontier_constant_prediction_summary <- Frontier_constant_prediction %>%
 
 Frontier_relative_prediction_summary <- Frontier_relative_prediction %>%
   group_by(t, species, treatment) %>%
-  mean_qi(p_mu, p, .width = c(.5, .8, .9)) %T>%
+  median_qi(p_mu, p, .width = c(.5, .8, .9)) %T>%
   print()
 
 # Visualise mean predictions
