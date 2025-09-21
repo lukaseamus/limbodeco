@@ -22,9 +22,9 @@ parameters{
   real<lower=0> tau;
   
   // Parameters describing precision
-  real<lower=0> nu_max;
-  vector<lower=0>[n_treatment] nu_beta;
-  vector<lower=0>[n_treatment] nu_min;
+  real<lower=0> epsilon;
+  vector<lower=0>[n_treatment] lambda;
+  vector<lower=0>[n_treatment] theta;
 }
 
 model{
@@ -34,9 +34,9 @@ model{
   tau ~ exponential( 10 );
   
   // Priors for parameters describing precision
-  nu_max ~ gamma( square(1e5) / square(1e4) , 1e5 / square(1e4) );
-  nu_beta ~ exponential( 10 );
-  nu_min ~ gamma( square(30) / square(20) , 30 / square(20) );
+  epsilon ~ gamma( square(1e5) / square(1e4) , 1e5 / square(1e4) );
+  lambda ~ exponential( 10 );
+  theta ~ gamma( square(100) / square(50) , 100 / square(50) );
   
   // Model
   // Function describing mean
@@ -49,9 +49,9 @@ model{
     );
   
   // Function describing precision
-  vector[n] nu = nu_min[treatment] + exp(
-      log( nu_max - nu_min[treatment] )
-      - nu_beta[treatment] .* t
+  vector[n] nu = theta[treatment] + exp(
+      log( epsilon - theta[treatment] )
+      - lambda[treatment] .* t
     );
   
   // Beta prime likelihood
@@ -76,9 +76,9 @@ generated quantities{
   // Calculate and save precision
   vector[n] nu;
   for ( i in 1:n ) {
-    nu[i] = nu_min[treatment[i]] + exp(
-      log( nu_max - nu_min[treatment[i]] )
-      - nu_beta[treatment[i]] * t[i]
+    nu[i] = theta[treatment[i]] + exp(
+      log( epsilon - theta[treatment[i]] )
+      - lambda[treatment[i]] * t[i]
     );
   }
   
