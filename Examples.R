@@ -142,14 +142,14 @@ Brouwer_constant_samples$summary() %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# 70% of rhat above 1.001. rhat = 1.00 ± 0.000700. Good.
+# 21% of rhat above 1.001. rhat = 1.00 ± 0.000398. Good.
 
 Brouwer_relative_samples$summary() %>%
   mutate(rhat_check = rhat > 1.001) %>%
   summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No rhat above 1.001. rhat = 1.00 ± 0.0000863. Great.
+# No rhat above 1.001. rhat = 1.00 ± 0.0000782. Great.
 
 # Chains
 require(bayesplot)
@@ -342,7 +342,7 @@ Brouwer_constant_prediction_summary <- Brouwer_constant_prediction %>%
   print()
 
 Brouwer_relative_prediction_summary <- Brouwer_relative_prediction %>%
-  drop_na() %>%
+  drop_na() %>% # NAs affect summary
   group_by(t, treatment) %>%
   median_qi(p_mu, k, nu, p, .width = c(.5, .8, .9)) %T>%
   print()
@@ -392,7 +392,6 @@ data %>%
   facet_grid(~ treatment) +
   theme_minimal()
 
-
 # Visualise predictions of new observations
 data %>%
   filter(reference == "Brouwer 1996") %>%
@@ -438,6 +437,68 @@ data %>%
   facet_grid(~ treatment) +
   theme_minimal()
 
+# Visualise predictions of k
+data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
+  ggplot() +
+  geom_line(data = Brouwer_constant_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, k)) +
+  geom_ribbon(data = Brouwer_constant_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = k.lower, ymax = k.upper, 
+                  alpha = factor(.width))) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
+  ggplot() +
+  geom_line(data = Brouwer_relative_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, k)) +
+  geom_ribbon(data = Brouwer_relative_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = k.lower, ymax = k.upper,
+                  alpha = factor(.width))) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+# Visualise predictions of nu
+data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
+  ggplot() +
+  geom_line(data = Brouwer_constant_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, nu)) +
+  geom_ribbon(data = Brouwer_constant_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = nu.lower, ymax = nu.upper, 
+                  alpha = factor(.width))) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
+  ggplot() +
+  geom_line(data = Brouwer_relative_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, nu)) +
+  geom_ribbon(data = Brouwer_relative_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = nu.lower, ymax = nu.upper,
+                  alpha = factor(.width))) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
 # While the constant model seems to fit the data better,
 # especially the gradual decline in the control, it 
 # generally looks less stable, the transition being very 
@@ -454,7 +515,7 @@ loo_compare(
   as.data.frame() %>%
   rownames_to_column("model") %>%
   as_tibble()
-# The relative model wins here too. Let's try a very different
+# The relative model marginally wins here too. Let's try a very different
 # dataset to be sure.
 
 # 2.2 Frontier et al. 2022 ####
