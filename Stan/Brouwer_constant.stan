@@ -34,7 +34,7 @@ model{
   tau ~ exponential( 10 );
   
   // Priors for parameters describing precision
-  epsilon ~ gamma( square(5e4) / square(2e4) , 5e4 / square(2e4) );
+  epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
   lambda ~ exponential( 10 );
   theta ~ gamma( square(100) / square(50) , 100 / square(50) );
   

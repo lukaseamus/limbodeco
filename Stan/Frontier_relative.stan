@@ -24,21 +24,21 @@ parameters{
   vector<lower=0>[n_species] tau;
   
   // Parameters describing precision
-  real<lower=0> nu_max;
-  matrix<lower=0>[n_species, n_treatment] nu_beta;
-  real<lower=0> nu_min;
+  real<lower=0> epsilon;
+  matrix<lower=0>[n_species, n_treatment] lambda;
+  matrix<lower=0>[n_species, n_treatment] theta;
 }
 
 model{
   // Priors for parameters describing mean
   alpha ~ normal( 0 , 0.01 );
-  to_vector(mu) ~ gamma( square(30) / square(15) , 30 / square(15) );
-  tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
+  to_vector(mu) ~ gamma( square(30) / square(20) , 30 / square(20) );
+  tau ~ exponential( 10 );
 
   // Priors for parameters describing precision
-  nu_max ~ gamma( square(1e5) / square(5e4) , 1e5 / square(5e4) );
-  to_vector(nu_beta) ~ exponential( 10 );
-  nu_min ~ gamma( square(30) / square(30) , 30 / square(30) );
+  epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
+  to_vector(lambda) ~ exponential( 10 );
+  to_vector(theta) ~ gamma( square(100) / square(50) , 100 / square(50) );
   
   // Model
   // Function describing mean
@@ -58,9 +58,9 @@ model{
   // Function describing precision
   vector[n] nu;
   for ( i in 1:n ) {
-    nu[i] =  nu_min + exp(
-      log( nu_max - nu_min )
-      - nu_beta[species[i], treatment[i]] * t[i]
+    nu[i] =  theta[species[i], treatment[i]] + exp(
+      log( epsilon - theta[species[i], treatment[i]] )
+      - lambda[species[i], treatment[i]] * t[i]
     );
   }
   
@@ -88,9 +88,9 @@ generated quantities{
   // Calculate and save precision
   vector[n] nu;
   for ( i in 1:n ) {
-    nu[i] =  nu_min + exp(
-      log( nu_max - nu_min )
-      - nu_beta[species[i], treatment[i]] * t[i]
+    nu[i] =  theta[species[i], treatment[i]] + exp(
+      log( epsilon - theta[species[i], treatment[i]] )
+      - lambda[species[i], treatment[i]] * t[i]
     );
   }
   
