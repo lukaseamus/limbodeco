@@ -10,12 +10,16 @@ functions{
 data{
   int n;
   vector[n] t;
-  vector[n] p;
+  vector[n] p_mean;
+  vector[n] p_sd;
   array[n] int treatment;
   int n_treatment;
 }
 
 parameters{
+  // Latent variable describing true, unobserved proportion
+  vector<lower=0>[n] p;
+  
   // Parameters describing mean
   vector[n_treatment] alpha;
   vector<lower=0>[n_treatment] mu;
@@ -30,8 +34,8 @@ parameters{
 model{
   // Priors for parameters describing mean
   alpha ~ normal( 0 , 0.01 );
-  mu ~ exponential( 0.01 );
-  tau ~ exponential( 10 );
+  mu ~ gamma( square(10) / square(6) , 10 / square(6) );
+  tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
   
   // Priors for parameters describing precision
   epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
@@ -54,37 +58,17 @@ model{
       - lambda[treatment] .* t
     );
     
-  // Beta prime likelihood
+  // Beta prime likelihood (nu parameterisation)
   for ( i in 1:n ) {
     p[i] ~ betap( p_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
   }
-}
-
-generated quantities{
-  // Calculate and save mean
-  vector[n] p_mu;
-  for ( i in 1:n ) {
-    p_mu[i] = exp(
-      t[i] * alpha[treatment[i]] -
-      ( alpha[treatment[i]] + tau ) * mu[treatment[i]] / 5 * (
-        log1p_exp( 5 / mu[treatment[i]] * ( t[i] - mu[treatment[i]] ) ) -
-        log1p_exp( -5 )
-      )
-    );
-  }
   
-  // Calculate and save precision
-  vector[n] nu;
   for ( i in 1:n ) {
-    nu[i] = theta[treatment[i]] + exp(
-      log( epsilon - theta[treatment[i]] )
-      - lambda[treatment[i]] * t[i]
-    );
+    p_mean[i] ~ normal( p[i] , p_sd[i] );
   }
-  
-  // Calculate and save log likelihood
-  vector[n] log_lik;
-  for ( i in 1:n ) {
-    log_lik[i] = betap_lpdf( p[i] | p_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
-  }
+  // Beta prime measurement error model (sigma parameterisation)
+  // for ( i in 1:n ) {
+  //   p_mean[i] ~ betap( p[i] * ( 1 + p[i] * ( 1 + p[i] ) / square(p_sd[i]) ) , 
+  //                      2 + p[i] * ( 1 + p[i] ) / square(p_sd[i]) );
+  // }
 }

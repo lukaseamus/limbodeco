@@ -1,4 +1,22 @@
 ﻿reference,doi,species,treatment,t,p_mean,p_sd,n,source
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,0,1,NA,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,7,0.88165099,0.029709844,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,14,0.903079704,0.026497969,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,28,0.869559961,0.024885236,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,56,0.892459772,0.026497969,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,90,0.711936658,0.039345469,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,118,0.406408656,0.034514065,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,146,0.460610657,0.057820546,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,182,0.422145056,0.028906875,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,364,0.297218855,0.008029688,5,"Figure 4a, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,0,1,NA,5,"Figure 4b, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,7,0.86102809,0.017994546,5,"Figure 4b, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,14,0.809774571,0.035989092,5,"Figure 4b, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,28,0.71359191,0.02437633,5,"Figure 4b, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,56,0.661085899,0.024960176,5,"Figure 4b, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,90,0.524243001,0.018575015,5,"Figure 4b, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,118,0.400342653,0.020900269,5,"Figure 4b, Table 1, Text"
+Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Pre-killed,146,0.347246042,0.024960176,5,"Figure 4b, Table 1, Text"
 Brouwer 1996,10.1007/bf02390433,Desmarestia anceps,Control,0,1,0.042648709,5,Figure 4a
 Brouwer 1996,10.1007/bf02390433,Desmarestia anceps,Control,34,0.97266099,0.069584736,5,Figure 4a
 Brouwer 1996,10.1007/bf02390433,Desmarestia anceps,Control,60,0.959809563,0.042648709,5,Figure 4a
@@ -22,7 +40,35 @@ Brouwer 1996,10.1007/bf02390433,Desmarestia anceps,Pre-killed,60,0.101048736,0.1
 Brouwer 1996,10.1007/bf02390433,Desmarestia anceps,Pre-killed,70,0.066937248,0.074323559,5,Figure 4b
 Brouwer 1996,10.1007/bf02390433,Desmarestia anceps,Pre-killed,76,0.023549107,0.041666238,5,Figure 4b
 Brouwer 1996,10.1007/bf02390433,Desmarestia anceps,Pre-killed,85,0.027529859,0.020270062,5,Figure 4b
-Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Fresh,0,1,NA,1,Figure 1a
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Spring,0,1,NA,1,"Figure 2, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Spring,7,0.86837304,NA,1,"Figure 2, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Spring,9,0.81262815,NA,1,"Figure 2, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Spring,15,0.96165687,NA,1,"Figure 2, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Spring,19,0.48491508,NA,1,"Figure 2, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Spring,21,0.26658714,NA,1,"Figure 2, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Spring,25,0.23305412,NA,1,"Figure 2, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Summer,0,1,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Summer,8,0.43665165,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Summer,11,0.32824513,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Summer,13,0.2200058,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Summer,15,0.47631332,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Summer,18,0.2599767,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,0,1,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,7,0.94826835,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,12,1.0551331,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,15,1.0460372,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,19,0.8516141,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,26,0.66595817,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,30,0.33760777,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Autumn,36,0.18389352,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Winter,0,1,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Winter,6,0.79310346,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Winter,12,0.95537525,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Winter,15,0.48478702,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Winter,19,0.9452333,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Winter,26,0.69574034,NA,1,"Figure 3, Table 1"
+Bourguès et al. 1996,10.1007/bf00034552,Ulvaria obscura,Winter,30,0.5436106,NA,1,"Figure 3, Table 1"
+Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Fresh,0,1,NA,5,Figure 1a
 Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Fresh,3.387884008,0.966059307,0.029958038,5,Figure 1a
 Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Fresh,9.399224806,0.747231154,0.119832153,5,Figure 1a
 Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Fresh,17.3844387,0.242586638,0.089874115,5,Figure 1a
@@ -37,7 +83,7 @@ Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Detache
 Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Detached,9.399224806,0.32297249,0.069902089,5,Figure 1a
 Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Detached,17.3844387,0.099678457,0.069902089,5,Figure 1a
 Hamersley et al. 2015,10.1016/j.aquabot.2015.05.003,Macrocystis pyrifera,Detached,24.38271605,0.077349053,0.039944051,5,Figure 1a
-de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Fresh,0,1,0.0027144,5,"Figure 2a, b"
+de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Fresh,0,1,NA,5,"Figure 2a, b"
 de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Fresh,14,1.04050125,0.01745035,5,"Figure 2a, b"
 de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Fresh,30,0.7989626,0.1500729,5,"Figure 2a, b"
 de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Fresh,42,0.60667294,0.23654856,5,"Figure 2a, b"
@@ -51,24 +97,6 @@ de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Senescent,42,0.
 de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Senescent,77,0.15813577,NA,1,Figure 2b
 de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Senescent,107,0.010907238,NA,1,Figure 2b
 de Bettignies et al. 2020,10.1111/jpy.13041,Laminaria hyperborea,Senescent,143,0.043104778,NA,1,Figure 2b
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,0,1,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,4.8533335,0.6737288,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,10.378667,0.6758475,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,13.738667,0.45974576,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,14.485333,0.2542373,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,38.528,0.11652543,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,45.621334,0.086864404,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Benthic,52.64,0,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,0,1,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,4.6293335,0.9618644,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,10.005333,0.9851695,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,13.44,0.7055085,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,15.008,0.62711865,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,27.402666,0.36228815,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,42.037334,0.17584746,NA,1,Figure 2
-Albright et al. 1982,10.1515/9783110837988-015,Macrocystis pyrifera,Pelagic,55.328,0,NA,1,Figure 2
-Birch et al. ,NA,NA,NA,0,1,NA,1,NA
-Bourguès et al. ,NA,NA,NA,0,1,NA,1,NA
 Frontier et al. 2021,10.1016/j.marenvres.2021.105277,Laminaria hyperborea,0m,0,1,NA,1,"Data, Figure 2"
 Frontier et al. 2021,10.1016/j.marenvres.2021.105277,Laminaria hyperborea,15m,0,1,NA,1,"Data, Figure 2"
 Frontier et al. 2021,10.1016/j.marenvres.2021.105277,Laminaria hyperborea,30m,0,1,NA,1,"Data, Figure 2"
