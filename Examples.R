@@ -512,7 +512,7 @@ data %>%
 tibble(n = 1:1e3,
        alpha = rnorm( 1e3 , 0 , 0.01 ), 
        mu = rgamma( 1e3 , 30^2 / 20^2 , 30 / 20^2 ),
-       tau = rgamma( 1e3 , 0.1^2 / 0.05^2 , 0.1 / 0.05^2 )) %>%
+       tau = rexp( 1e3 , 10 )) %>%
   expand_grid(t = data %>%
                 filter(reference == "Frontier et al. 2022") %$% 
                 seq(min(t), max(t), length.out = 100)) %>%
@@ -538,7 +538,7 @@ tibble(n = 1:1e3,
 tibble(n = 1:1e3,
        alpha = rnorm( 1e3 , 0 , 0.01 ), 
        mu = rgamma( 1e3 , 30^2 / 20^2 , 30 / 20^2 ),
-       tau = rgamma( 1e3 , 0.1^2 / 0.05^2 , 0.1 / 0.05^2 )) %>%
+       tau = rexp( 1e3 , 10 )) %>%
   expand_grid(t = data %>%
                 filter(reference == "Frontier et al. 2022") %$% 
                 seq(min(t), max(t), length.out = 100)) %>%
@@ -974,7 +974,472 @@ loo_compare(
 rm(list = ls(pattern = "^(Brouwer|Frontier)"))
 
 # 3. Examples ####
-# 3.2 Hamersley et al. 2015 ####
+# 3.1 Birch et al. 1983 ####
+# Birch et al. 1983 is a difficult one. I first tried modelling as is but
+# (1) the control treatment has too strong a suggestion of an asymptote > 0
+# and (2) there is an initial drop of ~12% from t0 to the first timepoint.
+# These characteristics essentially caused massive sampling issues because
+# 1 suggests that there should be an additional offset parameter and 2
+# suggests that k is more negative to begin with. Given that the paper
+# states there was essentially no decomposition in the first phase (up to
+# timepoint 4), I applied a +12% offset. This solved issue 2 and resulted
+# in a decent model (see below) but issue 1 remains. I have decided to 
+# abandon this example because I failed but also because it is somewhat 
+# of an oddity among macroalgal decomposition stories.
+
+# 3.1.1 Visualisation ####
+data %>%
+  filter(reference == "Birch et al. 1983" & t != 0) %>%
+  droplevels() %>%
+  mutate(p = p + 0.12, # +12% offset
+         p_mean = p_mean + 0.12) %>%
+  ggplot() +
+  geom_point(aes(t, p), shape = 16, alpha = 0.5) +
+  geom_pointrange(data = . %>% 
+                    distinct(t, p_mean, p_sd, treatment),
+                  aes(t, p_mean, 
+                      ymin = p_mean - p_sd,
+                      ymax = p_mean + p_sd)) +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+# 3.1.2 Prior simulation ####
+tibble(n = 1:1e3,
+       alpha = rnorm( 1e3 , 0 , 0.005 ), 
+       mu = rgamma( 1e3 , 150^2 / 100^2 , 150 / 100^2 ),
+       tau = rgamma( 1e3 , 0.1^2 / 0.05^2 , 0.1 / 0.05^2 )) %>%
+  expand_grid(t = data %>%
+                filter(reference == "Birch et al. 1983") %$% 
+                seq(min(t), max(t), length.out = 100)) %>%
+  mutate(
+    p = exp(
+      t * alpha - ( alpha + tau ) * mu / 5 * 
+        log( 
+          ( 1 + exp( 5 / mu * ( t - mu ) ) ) / 
+            ( 1 + exp( -5 ) )
+        )
+    )
+  ) %>%
+  ggplot(aes(t, p, group = n)) +
+    geom_hline(yintercept = data %>%
+                 filter(reference == "Birch et al. 1983") %$%
+                 range(p)) +
+    geom_line(alpha = 0.05) +
+    coord_cartesian(ylim = c(-0.1, 1.5), expand = F, clip = "off") +
+    theme_minimal() +
+    theme(panel.grid = element_blank())
+
+# 3.1.3 Stan model ####
+Birch_model <- here("Stan", "Birch.stan") %>% 
+  read_file() %>%
+  write_stan_file() %>%
+  cmdstan_model()
+
+Birch_samples <- Birch_model$sample(
+          data = data %>% # t0 = 1 is predetermined
+            filter(reference == "Birch et al. 1983" & t != 0) %>% 
+            droplevels() %>%
+            select(t, p, treatment) %>%
+            mutate(p = p + 0.12) %>% # apply offset
+            compose_data(),
+          chains = 8,
+          parallel_chains = parallel::detectCores(),
+          iter_warmup = 1e4,
+          iter_sampling = 1e4
+        ) %T>%
+  print()
+
+# 3.1.4 Model checks ####
+# Rhat
+Birch_samples$summary() %>%
+  mutate(rhat_check = rhat > 1.001) %>%
+  summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
+            rhat_mean = mean(rhat),
+            rhat_sd = sd(rhat))
+# No rhat above 1.001. rhat = 1.00 ± 0.0000755. Great.
+
+# Chains
+Birch_samples$draws(format = "df") %>%
+  mcmc_rank_overlay()
+# Chains are good.
+
+# Pairs
+Birch_samples$draws(format = "df") %>%
+  mcmc_pairs(pars = c("alpha[1]", "mu[1]", "tau[1]"))
+Birch_samples$draws(format = "df") %>%
+  mcmc_pairs(pars = c("alpha[2]", "mu[2]", "tau[1]"))
+# Looks fine.
+
+# 3.1.5 Prior-posterior comparison ####
+Birch_prior <- prior_samples(
+  model = Birch_model,
+  data = data %>%
+    filter(reference == "Birch et al. 1983" & t != 0) %>% 
+    droplevels() %>%
+    select(t, p, treatment) %>%
+    mutate(p = p + 0.12) %>%
+    compose_data()
+  )
+
+Birch_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Birch_samples,
+    group = data %>% 
+      filter(reference == "Birch et al. 1983") %>%
+      droplevels() %>%
+      select(treatment),
+    parameters = c("alpha[treatment]", "mu[treatment]", 
+                   "tau[treatment]", "epsilon", "lambda[treatment]",
+                   "theta[treatment]"),
+    format = "long"
+    ) %>%
+  prior_posterior_plot(group_name = "treatment", ridges = FALSE)
+
+# 3.1.6 Prediction ####
+# Parameter posteriors
+Birch_prior_posterior <- Birch_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Birch_samples,
+    group = data %>% 
+      filter(reference == "Birch et al. 1983") %>%
+      droplevels() %>%
+      select(treatment),
+    parameters = c("alpha[treatment]", "mu[treatment]", 
+                   "tau[treatment]", "epsilon", "lambda[treatment]",
+                   "theta[treatment]"),
+    format = "short"
+  ) %>% 
+  filter(!(treatment == "Pre-killed" & distribution == "prior")) %>%
+  mutate(
+    treatment = if_else(
+      distribution == "prior", "Prior", treatment
+    ) %>% fct()
+  ) %>%
+  select(-distribution) %T>%
+  print()
+
+# Predict across predictor range
+Birch_prediction <- Birch_prior_posterior %>%
+  spread_continuous(data = data %>% 
+                      filter(reference == "Birch et al. 1983") %>%
+                      droplevels(), 
+                    predictor_name = "t",
+                    group_name = "treatment") %>%
+  mutate(
+    p_mu = exp(
+      t * alpha - ( alpha + tau ) * mu / 5 * 
+        log( 
+          ( 1 + exp( 5 / mu * ( t - mu ) ) ) / 
+            ( 1 + exp( -5 ) )
+        )
+    ),
+    k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
+    nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
+    p = rbetapr( n() , p_mu * ( 1 + nu ) , 2 + nu )
+  ) %T>%
+  print()
+# Some NAs produced by rbetapr due to arithmetic underflow
+Birch_prediction %>%
+  group_by(treatment) %>%
+  summarise(p %>% is.na() %>% sum() / n())
+# Essentially no NAs
+
+# Summarise predictions
+Birch_prediction_summary <- Birch_prediction %>%
+  drop_na() %>% # NAs affect summary
+  group_by(t, treatment) %>%
+  median_qi(p_mu, k, nu, p, .width = c(.5, .8, .9)) %T>%
+  print()
+
+# Viusalise mean predictions
+data %>%
+  filter(reference == "Birch et al. 1983" & t != 0) %>%
+  droplevels() %>%
+  mutate(p_mean = p_mean + 0.12) %>%
+  ggplot() +
+  geom_pointrange(data = . %>% 
+                    distinct(t, p_mean, p_sd, treatment),
+                  aes(t, p_mean,
+                      ymin = p_mean - p_sd,
+                      ymax = p_mean + p_sd)) +
+  geom_line(data = Birch_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, p_mu)) +
+  geom_ribbon(data = Birch_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = p_mu.lower, ymax = p_mu.upper, 
+                  alpha = factor(.width))) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+# Visualise predictions of new observations
+data %>%
+  filter(reference == "Birch et al. 1983" & t != 0) %>%
+  droplevels() %>%
+  mutate(p_mean = p_mean + 0.12) %>%
+  ggplot() +
+  geom_pointrange(data = . %>% 
+                    distinct(t, p_mean, p_sd, treatment),
+                  aes(t, p_mean, colour = treatment,
+                      ymin = p_mean - p_sd,
+                      ymax = p_mean + p_sd)) +
+  geom_line(data = Birch_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, p, colour = treatment)) +
+  geom_ribbon(data = Birch_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = p.lower, ymax = p.upper, 
+                  alpha = factor(.width), fill = treatment)) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  theme_minimal()
+
+# Visualise predictions of k
+Birch_prediction_summary %>%
+  filter(treatment != "Prior") %>%
+  ggplot() +
+  geom_line(aes(t, k)) +
+  geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper, 
+                  alpha = factor(.width))) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+# Visualise predictions of nu
+Birch_prediction_summary %>%
+  filter(treatment != "Prior") %>%
+  ggplot() +
+  geom_line(aes(t, nu)) +
+  geom_ribbon(aes(t, ymin = nu.lower, ymax = nu.upper, 
+                  alpha = factor(.width))) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+# 3.2 Brouwer 1996 ####
+# 3.2.1 Visualisation ####
+data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
+  ggplot() +
+  geom_point(aes(t, p), shape = 16, alpha = 0.5) +
+  geom_pointrange(data = . %>% 
+                    distinct(t, p_mean, p_sd, treatment),
+                  aes(t, p_mean, 
+                      ymin = p_mean - p_sd,
+                      ymax = p_mean + p_sd)) +
+  facet_grid(~ treatment) +
+  theme_minimal()
+
+# 3.2.2 Prior simulation ####
+tibble(n = 1:1e3,
+       alpha = rnorm( 1e3 , 0 , 0.01 ), 
+       mu = rgamma( 1e3 , 300^2 / 200^2 , 300 / 200^2 ),
+       tau = rgamma( 1e3 , 0.1^2 / 0.05^2 , 0.1 / 0.05^2 )) %>%
+  expand_grid(t = data %>%
+                filter(reference == "Brouwer 1996") %$% 
+                seq(min(t), max(t), length.out = 100)) %>%
+  mutate(
+    p = exp(
+      t * alpha - ( alpha + tau ) * mu / 5 * 
+        log( 
+          ( 1 + exp( 5 / mu * ( t - mu ) ) ) / 
+            ( 1 + exp( -5 ) )
+        )
+    )
+  ) %>%
+  ggplot(aes(t, p, group = n)) +
+    geom_hline(yintercept = data %>%
+                 filter(reference == "Brouwer 1996") %$%
+                 range(p)) +
+    geom_line(alpha = 0.05) +
+    coord_cartesian(ylim = c(-0.1, 1.5), expand = F, clip = "off") +
+    theme_minimal() +
+    theme(panel.grid = element_blank())
+
+# 3.2.3 Stan model ####
+Brouwer_model <- here("Stan", "Brouwer.stan") %>% 
+  read_file() %>%
+  write_stan_file() %>%
+  cmdstan_model()
+
+Brouwer_samples <- Brouwer_model$sample(
+          data = data %>%
+            filter(reference == "Brouwer 1996") %>% 
+            droplevels() %>%
+            select(t, p, treatment) %>%
+            compose_data(),
+          chains = 8,
+          parallel_chains = parallel::detectCores(),
+          iter_warmup = 1e4,
+          iter_sampling = 1e4
+        ) %T>%
+  print()
+
+# 3.2.4 Model checks ####
+# Rhat
+Brouwer_samples$summary() %>%
+  mutate(rhat_check = rhat > 1.001) %>%
+  summarise(rhat_1.001 = sum(rhat_check) / length(rhat),
+            rhat_mean = mean(rhat),
+            rhat_sd = sd(rhat))
+# No rhat above 1.001. rhat = 1.00 ± 0.0000937. Great.
+
+# Chains
+Brouwer_samples$draws(format = "df") %>%
+  mcmc_rank_overlay()
+# Chains are good.
+
+# Pairs
+Brouwer_samples$draws(format = "df") %>%
+  mcmc_pairs(pars = c("alpha[1]", "mu[1]", "tau"))
+Brouwer_samples$draws(format = "df") %>%
+  mcmc_pairs(pars = c("alpha[2]", "mu[2]", "tau"))
+# Looks fine.
+
+# 3.2.5 Prior-posterior comparison ####
+Brouwer_prior <- prior_samples(
+  model = Brouwer_model,
+  data = data %>%
+    filter(reference == "Brouwer 1996") %>% 
+    droplevels() %>%
+    select(t, p, treatment) %>%
+    compose_data()
+  )
+
+Brouwer_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Brouwer_samples,
+    group = data %>% 
+      filter(reference == "Brouwer 1996") %>%
+      droplevels() %>%
+      select(treatment),
+    parameters = c("alpha[treatment]", "mu[treatment]", "tau", 
+                   "epsilon[treatment]", "lambda[treatment]",
+                   "theta[treatment]"),
+    format = "long"
+    ) %>%
+  prior_posterior_plot(group_name = "treatment", ridges = FALSE)
+
+# 3.2.6 Prediction ####
+# Parameter posteriors
+Brouwer_prior_posterior <- Brouwer_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Brouwer_samples,
+    group = data %>% 
+      filter(reference == "Brouwer 1996") %>%
+      droplevels() %>%
+      select(treatment),
+    parameters = c("alpha[treatment]", "mu[treatment]", "tau", 
+                   "epsilon[treatment]", "lambda[treatment]",
+                   "theta[treatment]"),
+    format = "short"
+  ) %>% 
+  filter(!(treatment == "Pre-killed" & distribution == "prior")) %>%
+  mutate(
+    treatment = if_else(
+      distribution == "prior", "Prior", treatment
+    ) %>% fct()
+  ) %>%
+  select(-distribution) %T>%
+  print()
+
+# Predict across predictor range
+Brouwer_prediction <- Brouwer_prior_posterior %>%
+  spread_continuous(data = data %>% 
+                      filter(reference == "Brouwer 1996") %>%
+                      droplevels(), 
+                    predictor_name = "t",
+                    group_name = "treatment") %>%
+  mutate(
+    p_mu = exp(
+      t * alpha - ( alpha + tau ) * mu / 5 * 
+        log( 
+          ( 1 + exp( 5 / mu * ( t - mu ) ) ) / 
+            ( 1 + exp( -5 ) )
+        )
+    ),
+    k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
+    nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
+    p = rbetapr( n() , p_mu * ( 1 + nu ) , 2 + nu )
+  ) %T>%
+  print()
+
+Brouwer_prediction %>%
+  group_by(treatment) %>%
+  summarise(p %>% is.na() %>% sum() / n())
+# Essentially no NAs
+
+# Summarise predictions
+Brouwer_prediction_summary <- Brouwer_prediction %>%
+  drop_na() %>% # NAs affect summary
+  group_by(t, treatment) %>%
+  median_qi(p_mu, k, nu, p, .width = c(.5, .8, .9)) %T>%
+  print()
+
+# Viusalise mean predictions
+data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
+  ggplot() +
+  geom_pointrange(data = . %>% 
+                    distinct(t, p_mean, p_sd, treatment),
+                  aes(t, p_mean, colour = treatment,
+                      ymin = p_mean - p_sd,
+                      ymax = p_mean + p_sd)) +
+  geom_line(data = Brouwer_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, p_mu, colour = treatment)) +
+  geom_ribbon(data = Brouwer_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = p_mu.lower, ymax = p_mu.upper, 
+                  alpha = factor(.width), fill = treatment)) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  theme_minimal()
+
+# Visualise predictions of new observations
+data %>%
+  filter(reference == "Brouwer 1996") %>%
+  droplevels() %>%
+  ggplot() +
+  geom_pointrange(data = . %>% 
+                    distinct(t, p_mean, p_sd, treatment),
+                  aes(t, p_mean, colour = treatment,
+                      ymin = p_mean - p_sd,
+                      ymax = p_mean + p_sd)) +
+  geom_line(data = Brouwer_prediction_summary %>%
+              filter(treatment != "Prior"),
+            aes(t, p, colour = treatment)) +
+  geom_ribbon(data = Brouwer_prediction_summary %>%
+                filter(treatment != "Prior"),
+              aes(t, ymin = p.lower, ymax = p.upper, 
+                  alpha = factor(.width), fill = treatment)) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  theme_minimal()
+
+# Visualise predictions of k
+Brouwer_prediction_summary %>%
+  filter(treatment != "Prior") %>%
+  ggplot() +
+  geom_line(aes(t, k, colour = treatment)) +
+  geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper, 
+                  alpha = factor(.width), fill = treatment)) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  theme_minimal()
+
+# Visualise predictions of nu
+Brouwer_prediction_summary %>%
+  filter(treatment != "Prior") %>%
+  ggplot() +
+  geom_line(aes(t, nu, colour = treatment)) +
+  geom_ribbon(aes(t, ymin = nu.lower, ymax = nu.upper, 
+                  alpha = factor(.width), fill = treatment)) +
+  scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+  theme_minimal()
+
+#############################
+
+# 3.3 Hamersley et al. 2015 ####
 # 3.2.1 Visualisation ####
 data %>%
   filter(reference == "Hamersley et al. 2015") %>%
@@ -1371,15 +1836,15 @@ Brouwer_relative_prediction_summary %>%
   scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
   facet_grid(~ treatment) +
   theme_minimal()
-# 3.1 Birch et al. 1982 ####
 
-# 3.3 de Bettignies et al. 2020 ####
 
-# 3.4 Albright et al. 1982 ####
+# 3.4 de Bettignies et al. 2020 ####
 
 # 3.5 Frontier et al. 2021 ####
 
-# 3.6 Bourguès et al. 1996 ####
+# 3.6 Frontier et al. 2022 ####
+
+# 3.7 Bourguès et al. 1996 ####
 
 
 
@@ -1390,11 +1855,13 @@ Brouwer_relative_prediction_summary %>%
 
 
 # 4. Visualisation ####
-# 4.1 Physiology ####
+# 4.1 Dead or alive ####
 
-# 4.2 Light ####
+# 4.2 Senescence ####
 
-# 4.3 Season ####
+# 4.3 Light ####
+
+# 4.4 Season ####
 
 
 
