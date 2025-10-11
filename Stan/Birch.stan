@@ -35,8 +35,8 @@ model{
   
   // Priors for parameters describing precision
   epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
-  lambda ~ exponential( 10 );
-  theta ~ gamma( square(100) / square(50) , 100 / square(50) );
+  lambda ~ exponential( 1 );
+  theta ~ gamma( square(500) / square(250) , 500 / square(250) );
   
   // Model
   // Function describing mean
