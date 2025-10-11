@@ -19,19 +19,19 @@ parameters{
   // Parameters describing mean
   vector[n_treatment] alpha;
   vector<lower=0>[n_treatment] mu;
-  real<lower=0> tau;
+  vector<lower=0>[n_treatment] tau;
   
   // Parameters describing precision
   real<lower=0> epsilon;
   vector<lower=0>[n_treatment] lambda;
-  real<lower=0> theta;
+  vector<lower=0>[n_treatment] theta;
 }
 
 model{
   // Priors for parameters describing mean
-  alpha ~ normal( -0.005 , 0.003 );
-  mu ~ gamma( square(200) / square(150) , 200 / square(150) );
-  tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
+  alpha ~ normal( 0 , 0.01 );
+  mu ~ exponential( 0.1 );
+  tau ~ gamma( square(0.0366) / square(0.02) , 0.0366 / square(0.02) );
   
   // Priors for parameters describing precision
   epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
@@ -42,15 +42,15 @@ model{
   // Function describing mean
   vector[n] p_mu = exp(
       t .* alpha[treatment] - 
-      ( alpha[treatment] + tau ) .* mu[treatment] ./ 5 .* (
+      ( alpha[treatment] + tau[treatment] ) .* mu[treatment] ./ 5 .* (
         log1p_exp( 5 ./ mu[treatment] .* ( t - mu[treatment] ) ) -
         log1p_exp( -5 )
       )
     );
   
   // Function describing precision
-  vector[n] nu = theta + exp(
-      log( epsilon - theta )
+  vector[n] nu = theta[treatment] + exp(
+      log( epsilon - theta[treatment] )
       - lambda[treatment] .* t
     );
     

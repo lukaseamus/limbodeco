@@ -11,49 +11,59 @@ data{
   int n;
   vector[n] t;
   vector[n] p;
+  array[n] int species;
+  int n_species;
   array[n] int treatment;
   int n_treatment;
 }
 
 parameters{
   // Parameters describing mean
-  vector[n_treatment] alpha;
-  vector<lower=0>[n_treatment] mu;
-  real<lower=0> tau;
+  vector<lower=0>[n_species] alpha;
+  matrix<lower=0>[n_species, n_treatment] mu;
+  vector<lower=0>[n_species] tau;
   
   // Parameters describing precision
   real<lower=0> epsilon;
-  vector<lower=0>[n_treatment] lambda;
-  real<lower=0> theta;
+  matrix<lower=0>[n_species, n_treatment] lambda;
+  vector<lower=0>[n_species] theta;
 }
 
 model{
   // Priors for parameters describing mean
-  alpha ~ normal( -0.005 , 0.003 );
-  mu ~ gamma( square(200) / square(150) , 200 / square(150) );
+  alpha ~ exponential( 100 );
+  to_vector(mu) ~ gamma( square(50) / square(30) , 50 / square(30) );
   tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
-  
+
   // Priors for parameters describing precision
   epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
-  lambda ~ exponential( 1 );
+  to_vector(lambda) ~ exponential( 1 );
   theta ~ gamma( square(500) / square(250) , 500 / square(250) );
   
   // Model
   // Function describing mean
-  vector[n] p_mu = exp(
-      t .* alpha[treatment] - 
-      ( alpha[treatment] + tau ) .* mu[treatment] ./ 5 .* (
-        log1p_exp( 5 ./ mu[treatment] .* ( t - mu[treatment] ) ) -
+  vector[n] p_mu;
+  for ( i in 1:n ) {
+    p_mu[i] = exp(
+      t[i] * alpha[species[i]] -
+      ( alpha[species[i]] + tau[species[i]] ) * 
+      mu[species[i], treatment[i]] / 5 * (
+        log1p_exp( 5 / mu[species[i], treatment[i]] * 
+                  ( t[i] - mu[species[i], treatment[i]] ) ) -
         log1p_exp( -5 )
       )
     );
+  }
   
   // Function describing precision
-  vector[n] nu = theta + exp(
-      log( epsilon - theta )
-      - lambda[treatment] .* t
+  vector[n] nu;
+  for ( i in 1:n ) {
+    nu[i] =  theta[species[i]] + exp(
+      log( epsilon - theta[species[i]] )
+      - lambda[species[i], treatment[i]] * t[i]
     );
-    
+  }
+  
   // Beta prime likelihood
   for ( i in 1:n ) {
     p[i] ~ betap( p_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );

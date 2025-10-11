@@ -37,8 +37,8 @@ model{
 
   // Priors for parameters describing precision
   epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
-  to_vector(lambda) ~ exponential( 10 );
-  to_vector(theta) ~ gamma( square(100) / square(50) , 100 / square(50) );
+  to_vector(lambda) ~ exponential( 1 );
+  to_vector(theta) ~ gamma( square(500) / square(250) , 500 / square(250) );
   
   // Model
   // Function describing mean
