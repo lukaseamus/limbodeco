@@ -10,6 +10,8 @@ set.seed(100)
 data <- read_csv("Examples.csv") %>%
   mutate(species = species %>% fct(),
          treatment = treatment %>% fct(),
+         # Replace 0 wth small constant within measurment error
+         # because the model is undefined for y = 0
          p_mean = if_else(p_mean == 0, 1e-5, p_mean)) %>%
   rowwise() %>%
   mutate(p = if( !is.na(p_sd) ) {
@@ -1964,7 +1966,7 @@ Frontier2021_prior_posterior <- Frontier2021_prior %>%
     group = data %>% 
       filter(reference == "Frontier et al. 2021") %>%
       droplevels() %>%
-      select(treatment),
+      select(species, treatment),
     parameters = c("alpha[species]", "mu[species, treatment]", 
                    "tau[species]", "epsilon", 
                    "lambda[species, treatment]", 
@@ -2181,7 +2183,7 @@ Frontier2022_prior_posterior <- Frontier2022_prior %>%
     group = data %>% 
       filter(reference == "Frontier et al. 2022") %>%
       droplevels() %>%
-      select(treatment),
+      select(species, treatment),
     parameters = c("alpha[species]", "mu[species, treatment]", 
                    "tau", "epsilon", "lambda[species, treatment]", 
                    "theta"),
