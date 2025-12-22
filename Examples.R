@@ -10,7 +10,7 @@ set.seed(100)
 data <- read_csv("Examples.csv") %>%
   mutate(species = species %>% fct(),
          treatment = treatment %>% fct(),
-         # Replace 0 wth small constant within measurment error
+         # Replace 0 with small constant within measurement error
          # because the model is undefined for y = 0
          p_mean = if_else(p_mean == 0, 1e-5, p_mean)) %>%
   rowwise() %>%
