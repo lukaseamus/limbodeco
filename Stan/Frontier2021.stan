@@ -10,62 +10,106 @@ functions{
 data{
   int n;
   vector[n] t;
-  vector[n] p;
+  vector[n] m;
   array[n] int species;
   int n_species;
-  array[n] int treatment;
-  int n_treatment;
+  array[n] int replicate;
+  int n_replicate;
+  vector[n] depth;
 }
 
 parameters{
-  // Parameters describing mean
-  vector<lower=0>[n_species] alpha;
-  matrix<lower=0>[n_species, n_treatment] mu;
-  vector<lower=0>[n_species] tau;
+  // Parameters describing global mean
+  real log_alpha_mu;
+  real log_mu_mu;
+  real log_tau_mu;
+  real log_beta_mu; // beta is the depth effect on log mu
   
-  // Parameters describing precision
+  real<lower=0> log_alpha_sigma_s; // species standard deviations
+  real<lower=0> log_mu_sigma_s;
+  real<lower=0> log_tau_sigma_s;
+  real<lower=0> log_alpha_sigma_r; // replicate standard deviations
+  real<lower=0> log_mu_sigma_r;
+  real<lower=0> log_tau_sigma_r;
+  real<lower=0> log_beta_sigma; // species standard deviation
+  
+  // Parameters describing species mean
+  vector[n_species] log_alpha_z_s; // z-scores
+  vector[n_species] log_mu_z_s;
+  vector[n_species] log_tau_z_s;
+
+  vector[n_replicate] log_alpha_z_r;
+  vector[n_replicate] log_mu_z_r;
+  vector[n_replicate] log_tau_z_r;
+  
+  vector[n_species] log_beta_z;
+  
+  /// Parameters describing global precision
   real<lower=0> epsilon;
-  matrix<lower=0>[n_species, n_treatment] lambda;
-  vector<lower=0>[n_species] theta;
+  real<lower=0> lambda;
+  real<lower=0> theta;
+}
+
+transformed parameters{
+  // Convert z-scores
+  vector[n_species] log_alpha_s = log_alpha_z_s * log_alpha_sigma_s + log_alpha_mu;
+  vector[n_species] log_mu_s = log_mu_z_s * log_mu_sigma_s + log_mu_mu;
+  vector[n_species] log_tau_s = log_tau_z_s * log_tau_sigma_s + log_tau_mu;
+  
+  vector[n_replicate] log_alpha_r = log_alpha_z_r * log_alpha_sigma_r + 0;
+  vector[n_replicate] log_mu_r = log_mu_z_r * log_mu_sigma_r + 0;
+  vector[n_replicate] log_tau_r = log_tau_z_r * log_tau_sigma_r + 0;
+  
+  vector[n_species] log_beta = log_beta_z * log_beta_sigma + log_beta_mu;
 }
 
 model{
-  // Priors for parameters describing mean
-  alpha ~ exponential( 100 );
-  to_vector(mu) ~ gamma( square(50) / square(30) , 50 / square(30) );
-  tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
+  // Priors for parameters describing global mean
+  log_alpha_mu ~ normal( log(0.004) , 0.2 );
+  log_mu_mu ~ normal( log(100) , 0.15 );
+  log_tau_mu ~ normal( log(0.12) , 0.2 );
+  log_beta_mu ~ normal( log(0.05) , 0.25 );
+  
+  log_alpha_sigma_s ~ normal( 0 , 0.2 )T[0,];
+  log_mu_sigma_s ~ normal( 0 , 0.15 )T[0,];
+  log_tau_sigma_s ~ normal( 0 , 0.2 )T[0,];
+  log_alpha_sigma_r ~ normal( 0 , 0.2 )T[0,];
+  log_mu_sigma_r ~ normal( 0 , 0.15 )T[0,];
+  log_tau_sigma_r ~ normal( 0 , 0.2 )T[0,];
+  log_beta_sigma ~ normal( 0 , 0.25 )T[0,];
+  
+  // Priors for parameters describing species mean
+  log_alpha_z_s ~ normal( 0 , 1 );
+  log_mu_z_s ~ normal( 0 , 1 );
+  log_tau_z_s ~ normal( 0 , 1 );
+  log_alpha_z_r ~ normal( 0 , 1 );
+  log_mu_z_r ~ normal( 0 , 1 );
+  log_tau_z_r ~ normal( 0 , 1 );
+  log_beta_z ~ normal( 0 , 1 );
 
-  // Priors for parameters describing precision
+  /// Priors for parameters describing global precision
   epsilon ~ gamma( square(4e4) / square(2e4) , 4e4 / square(2e4) );
-  to_vector(lambda) ~ exponential( 1 );
+  lambda ~ exponential( 1 );
   theta ~ gamma( square(500) / square(250) , 500 / square(250) );
   
   // Model
+  // Parameters
+  vector[n] beta = exp( log_beta[species] );
+  vector[n] alpha = exp( log_alpha_s[species] + log_alpha_r[replicate] );
+  vector[n] mu = exp( log_mu_s[species] + log_mu_r[replicate] - beta .* depth );
+  vector[n] tau = exp( log_tau_s[species] + log_tau_r[replicate] );
+  
   // Function describing mean
-  vector[n] p_mu;
-  for ( i in 1:n ) {
-    p_mu[i] = exp(
-      t[i] * alpha[species[i]] -
-      ( alpha[species[i]] + tau[species[i]] ) * 
-      mu[species[i], treatment[i]] / 5 * (
-        log1p_exp( 5 / mu[species[i], treatment[i]] * 
-                  ( t[i] - mu[species[i], treatment[i]] ) ) -
+  vector[n] m_mu = exp(
+      t .* alpha - ( alpha + tau ) .* mu / 5 .* (
+        log1p_exp( 5 / mu .* ( t - mu ) ) -
         log1p_exp( -5 )
       )
-    );
-  }
+  );
   
   // Function describing precision
-  vector[n] nu;
-  for ( i in 1:n ) {
-    nu[i] =  theta[species[i]] + exp(
-      log( epsilon - theta[species[i]] )
-      - lambda[species[i], treatment[i]] * t[i]
-    );
-  }
-  
+  vector[n] nu = theta + exp( log( epsilon - theta ) - lambda * t );
+    
   // Beta prime likelihood
-  for ( i in 1:n ) {
-    p[i] ~ betap( p_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
-  }
+  for ( i in 1:n ) m[i] ~ betap( m_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
 }

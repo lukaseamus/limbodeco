@@ -1,3 +1,12 @@
+functions{
+  // Beta prime log probability density function
+  real betap_lpdf( real y , real alpha , real beta ) {
+    return ( alpha - 1 ) * log( y )
+    - ( alpha + beta ) * log1p( y ) -
+    lbeta( alpha , beta );
+  }
+}
+
 data{
   int n;
   vector[n] t;
@@ -10,8 +19,8 @@ parameters{
   real<lower=0> mu;
   real<lower=0> tau;
   
-  // Likelihood standard deviation
-  real<lower=0> sigma;
+  // Likelihood precision
+  real<lower=0> nu;
 }
 
 model{
@@ -19,17 +28,17 @@ model{
   alpha ~ normal( 0 , 0.02 );
   mu ~ gamma( square(30) / square(20) , 30 / square(20) );
   tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
-  sigma ~ exponential( 1 );
+  nu ~ gamma( square(100) / square(50) , 100 / square(50) );
   
-  // Model (relative rate, constant intercept parameterisation)
+  // Model
   vector[n] m_mu = exp(
       t * alpha - ( alpha + tau ) * mu / 5 * (
         log1p_exp( 5 / mu * ( t - mu ) ) - log1p_exp( -5 )
       )
   );
 
-  // Normal likelihood
-  m ~ normal( m_mu , sigma );
+  // Beta prime likelihood
+  for ( i in 1:n ) m[i] ~ betap( m_mu[i] * ( 1 + nu ) , 2 + nu );
 }
 
 generated quantities{
@@ -42,5 +51,5 @@ generated quantities{
   
   // Save pointwise log-likelihood
   vector[n] log_lik;
-  for(i in 1:n) log_lik[i] = normal_lpdf( m[i] | m_mu[i] , sigma );
+  for(i in 1:n) log_lik[i] = betap_lpdf( m[i] | m_mu[i] * ( 1 + nu ) , 2 + nu );
 }
