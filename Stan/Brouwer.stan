@@ -10,12 +10,21 @@ functions{
 data{
   int n;
   vector[n] t;
-  vector[n] p;
+  vector[n] m_mean;
+  vector[n] m_sd;
   array[n] int treatment;
   int n_treatment;
 }
 
+transformed data{
+  // Convert sd to nu because this is easier on the sampler
+  vector[n] m_nu = m_mean .* ( 1 + m_mean ) ./ m_sd^2;
+}
+
 parameters{
+  // Latent variable
+  vector<lower=0>[n] m;
+  
   // Parameters describing mean
   vector[n_treatment] alpha;
   vector<lower=0>[n_treatment] mu;
@@ -29,8 +38,8 @@ parameters{
 
 model{
   // Priors for parameters describing mean
-  alpha ~ normal( -0.005 , 0.003 );
-  mu ~ gamma( square(200) / square(150) , 200 / square(150) );
+  alpha ~ normal( -0.01 , 0.005 );
+  mu ~ gamma( square(150) / square(100) , 150 / square(100) );
   tau ~ gamma( square(0.1) / square(0.05) , 0.1 / square(0.05) );
   
   // Priors for parameters describing precision
@@ -40,22 +49,26 @@ model{
   
   // Model
   // Function describing mean
-  vector[n] p_mu = exp(
+  vector[n] m_mu = exp(
       t .* alpha[treatment] - 
-      ( alpha[treatment] + tau ) .* mu[treatment] ./ 5 .* (
-        log1p_exp( 5 ./ mu[treatment] .* ( t - mu[treatment] ) ) -
+      ( alpha[treatment] + tau ) .* mu[treatment] / 5 .* (
+        log1p_exp( 5 / mu[treatment] .* ( t - mu[treatment] ) ) -
         log1p_exp( -5 )
       )
-    );
+  );
   
   // Function describing precision
   vector[n] nu = theta + exp(
-      log( epsilon - theta )
-      - lambda[treatment] .* t
-    );
+      log( epsilon - theta ) - lambda[treatment] .* t
+  );
     
   // Beta prime likelihood
   for ( i in 1:n ) {
-    p[i] ~ betap( p_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
+    m[i] ~ betap( m_mu[i] * ( 1 + nu[i] ) , 2 + nu[i] );
+  }
+  
+  // Beta prime measurement error model
+  for ( i in 1:n ) {
+    m_mean[i] ~ betap( m[i] * ( 1 + m_nu[i] ), 2 + m_nu[i] );
   }
 }
