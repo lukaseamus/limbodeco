@@ -1,4 +1,4 @@
-﻿reference,doi,species,treatment,replicate,t,p_mean,p_sd,n,source
+﻿reference,doi,species,treatment,replicate,t,m_mean,m_sd,n,source
 Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,NA,0,1,NA,5,"Figure 4a, Table 1, Text"
 Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,NA,7,0.88165099,0.029709844,5,"Figure 4a, Table 1, Text"
 Birch et al. 1983,10.1515/botm.1983.26.4.165,Cladophora aff. albida,Control,NA,14,0.903079704,0.026497969,5,"Figure 4a, Table 1, Text"
