@@ -13,18 +13,17 @@
 # a / ( 1 + exp( ( t - t0 ) / b ) ) + c
 # and its integral
 # c * t + a * (
-# t - b * 
-# log( 
-# ( 1 + exp( -( t0 - t ) / b ) ) / 
-# ( 1 + exp( -t0 / b )  )
-# )
+#   t - b * log( 
+#     ( 1 + exp( -( t0 - t ) / b ) ) / 
+#     ( 1 + exp( -t0 / b )  )
+#   )
 # )
 
 # a is the change in y, c is the y minimum, t0 is
 # the midpoint and b is the inverse logistic rate.
 # Rather than the change in y, I want to parameterise
-# the y maximum. My logistic function to descibe the
-# decline in detrital photosynthesis is
+# the y maximum. The full logistic function to descibe 
+# the decline in detrital photosynthesis is
 
 # ( alpha + tau ) / ( 1 + exp( r * ( t - mu ) ) ) - tau
 
@@ -69,27 +68,26 @@
 # The integral with r is
 
 # - tau * t + ( alpha + tau ) * (
-# t - (1 / r) * 
-# log( 
-# ( 1 + exp( -( mu - t ) / (1 / r) ) ) / 
-# ( 1 + exp( -mu / (1 / r) )  )
-# )
+#   t - (1 / r) * log( 
+#     ( 1 + exp( -( mu - t ) / (1 / r) ) ) / 
+#     ( 1 + exp( -mu / (1 / r) )  )
+#   )
 # )
 
 # Expanded to
 
 # - tau * t + alpha * t + tau * t - ( alpha + tau ) / r *
 # log( 
-# ( 1 + exp( r * -( mu - t ) ) ) / 
-# ( 1 + exp( r * -mu )  )
+#   ( 1 + exp( r * -( mu - t ) ) ) / 
+#   ( 1 + exp( r * -mu )  )
 # )
 
 # Simplified to
 
 # t * alpha - ( alpha + tau ) / r *
 # log( 
-# ( 1 + exp( r * ( t - mu ) ) ) / 
-# ( 1 + exp( -r * mu )  )
+#   ( 1 + exp( r * ( t - mu ) ) ) / 
+#   ( 1 + exp( -r * mu )  )
 # )
 
 # For r = 1 this simply is
