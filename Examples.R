@@ -7421,43 +7421,51 @@ data %>%
 data %>%
   filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
   droplevels() %>%
-  mutate(temperature = treatment %>% 
-           str_extract("\\d+") %>% 
-           as.numeric(),
-         temperature_c = temperature - 12) %>%
-  distinct(treatment, temperature, temperature_c)
+  mutate(
+    temperature = treatment %>% 
+      str_extract("\\d+") %>% 
+      as.numeric(),
+    temperature_c = temperature - 12,
+    grazing = if_else(
+      treatment %>% str_detect("Grazed"),
+      0.5, -0.5
+    )
+  ) %>%
+  distinct(treatment, temperature, temperature_c, grazing)
+
+# I tested this and it did not work, the model always lost chains, probably 
+# because the temperature effect is nonlinear. Therefore I am unfortunately 
+# forced to treat temperature as categorical. Partial pooling also failed.
+# Hence I am treating species, temperature, grazing and replicate as fixed.
+
+data %>%
+  filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
+  droplevels() %>%
+  mutate(
+    temperature = treatment %>% 
+      str_extract("\\d+°C") %>% fct(),
+    grazing = if_else(
+      treatment %>% str_detect("Grazed"),
+      0.5, -0.5
+    )
+  ) %>%
+  distinct(treatment, temperature, grazing)
 
 # 6.7.2 Prior simulation ####
 tibble(n = 1:1e3,
-       log_alpha_mu = rnorm( 1e3 , log(0.005) , 0.05 ), # delta = alpha + tau
-       log_mu_mu = rnorm( 1e3 , log(50) , 0.05 ), # this is log mu at 12°C
-       log_tau_mu = rnorm( 1e3 , log(0.1) , 0.05 ),
-       log_beta_mu = rnorm( 1e3 , log(0.2) , 0.05 ), # temperature effect on log mu
-       log_gamma_mu = rnorm( 1e3 , log(1) , 0.05 ), # grazing effect on log mu
-       log_alpha_sigma_s = rtnorm( 1e3 , 0 , 0.05 , 0 ), # species standard deviations
-       log_mu_sigma_s = rtnorm( 1e3 , 0 , 0.05 , 0 ),
-       log_tau_sigma_s = rtnorm( 1e3 , 0 , 0.05 , 0 ),
-       log_alpha_sigma_r = rtnorm( 1e3 , 0 , 0.05 , 0 ), # reference standard deviations
-       log_mu_sigma_r = rtnorm( 1e3 , 0 , 0.05 , 0 ), 
-       log_tau_sigma_r = rtnorm( 1e3 , 0 , 0.05 , 0 ),
-       log_beta_sigma = rtnorm( 1e3 , 0 , 0.05 , 0 ),
-       log_gamma_sigma = rtnorm( 1e3 , 0 , 0.05 , 0 ),
-       beta = rnorm( 1e3 , log_beta_mu , log_beta_sigma ) %>% exp(),
-       gamma = rnorm( 1e3 , log_gamma_mu , log_gamma_sigma ) %>% exp(),
-       alpha = exp(
-         rnorm( 1e3 , log_alpha_mu , log_alpha_sigma_s ) +
-           rnorm( 1e3 , 0 , log_alpha_sigma_r )
-       ),
-       mu = exp(
-         rnorm( 1e3 , log_mu_mu , log_mu_sigma_s ) +
-           rnorm( 1e3 , 0 , log_mu_sigma_r ) - 
-           beta * -2 - # change number for change in temperature relative to 12°C
-           gamma * -0.5 # change number for control (-0.5) or grazed (+0.5)
-       ),
-       tau = exp(
-         rnorm( 1e3 , log_tau_mu , log_tau_sigma_s ) +
-           rnorm( 1e3 , 0 , log_tau_sigma_r )
-       ),
+       log_alpha_s = rnorm( 1e3 , log(0.004) , 0.2 ), # species intercepts
+       log_mu_s = rnorm( 1e3 , log(30) , 0.2 ),
+       log_tau_s = rnorm( 1e3 , log(0.1) , 0.2 ),
+       log_mu_t = rnorm( 1e3 , 0 , 0.2 ), # temperature deviations (cannot affect alpha)
+       log_tau_t = rnorm( 1e3 , 0 , 0.2 ),
+       beta_mu = rnorm( 1e3 , 0 , 0.2 ), # grazing effects (cannot affect alpha)
+       beta_tau = rnorm( 1e3 , 0 , 0.2 ),
+       log_alpha_r = rnorm( 1e3 , 0 , 0.2 ), # replicate deviations
+       log_mu_r = rnorm( 1e3 , 0 , 0.2 ),
+       log_tau_r = rnorm( 1e3 , 0 , 0.2 ),
+       alpha = exp( log_alpha_s + log_alpha_r ),
+       mu = exp( log_mu_s + log_mu_t + beta_mu + log_mu_r ),
+       tau = exp( log_tau_s + log_tau_t + beta_tau + log_tau_r ),
        epsilon = rgamma( 1e3 , 4e4^2 / 2e4^2 , 4e4 / 2e4^2 ),
        lambda = rexp( 1e3 , 1 ),
        theta = rgamma( 1e3 , 500^2 / 250^2 , 500 / 250^2 )) %>%
@@ -7484,21 +7492,18 @@ tibble(n = 1:1e3,
     facet_wrap(~parameter, scale = "free", nrow = 1) +
     theme_minimal() +
     theme(panel.grid = element_blank())
+# This seems like a tight prior, but I tested looser priors and they cause
+# failed convergence. The data are strong with this one, so it's fine.
 
 tibble(n = 1:1e3,
-       log_k_mu = rnorm( 1e3 , log(0.001) , 0.5 ), # this is log k at depth = 0
-       log_k_sigma_s = rtnorm( 1e3 , 0 , 0.5 , 0 ),
-       log_k_sigma_r = rtnorm( 1e3 , 0 , 0.5 , 0 ),
-       beta_mu = rnorm( 1e3 , 0.5 , 0.3 ),
-       beta_sigma = rtnorm( 1e3 , 0 , 0.3 , 0 ),
-       beta = rnorm( 1e3 , beta_mu , beta_sigma ),
-       k = exp(
-         rnorm( 1e3 , log_k_mu , log_k_sigma_s ) + 
-           rnorm( 1e3 , 0 , log_k_sigma_r ) + beta * 3
-       ),
+       log_k_s = rnorm( 1e3 , log(0.1) , 1 ), # species intercept
+       log_k_t = rnorm( 1e3 , 0 , 1 ), # temperature deviation
+       beta = rnorm( 1e3 , 0 , 1 ), # grazing effects
+       log_k_r = rnorm( 1e3 , 0 , 1 ), # replicate deviations
+       k = exp( log_k_s + log_k_t + beta + log_k_r ),
        sigma = rexp( 1e3 , 1 )) %>%
   expand_grid(t = data %>%
-                filter(reference == "Frontier et al. 2022") %$% 
+                filter(reference == "Vandendriessche et al. 2007") %$% 
                 seq(min(t), max(t), length.out = 100)) %>%
   mutate(
     m_mu = exp( -k * t ),
@@ -7508,7 +7513,7 @@ tibble(n = 1:1e3,
                names_to = "parameter") %>%
   ggplot(aes(t, value, group = n)) +
     geom_hline(yintercept = data %>%
-                 filter(reference == "Frontier et al. 2022") %$%
+                 filter(reference == "Vandendriessche et al. 2007") %$%
                  range(m)) +
     geom_line(alpha = 0.05) +
     coord_cartesian(expand = F, clip = "off") +
@@ -7531,16 +7536,16 @@ Vandendriessche_samples <- Vandendriessche_model$sample(
           data = data %>%
             filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
             droplevels() %>%
-            # mutate(
-            #   temperature = treatment %>% 
-            #     str_extract("\\d+") %>% 
-            #     as.numeric() - 12, # centred
-            #   grazing = if_else(
-            #     treatment %>% str_detect("Grazed"),
-            #     0.5, -0.5 # effect-coded
-            #   )
-            # ) %>%
-            select(t, m, replicate) %>%
+            mutate(
+              temperature = treatment %>% 
+                str_extract("\\d+°C") %>% fct(),
+              grazing = if_else(
+                treatment %>% str_detect("Grazed"),
+                0.5, -0.5
+              )
+            ) %>%
+            select(t, m, species, temperature, 
+                   grazing, replicate) %>%
             compose_data(),
           chains = 8,
           parallel_chains = parallel::detectCores(),
@@ -7549,21 +7554,21 @@ Vandendriessche_samples <- Vandendriessche_model$sample(
         ) %T>%
   print()
 
+
 Vandendriessche_k_samples <- Vandendriessche_k_model$sample(
           data = data %>%
             filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
             droplevels() %>%
             mutate(
               temperature = treatment %>% 
-                str_extract("\\d+") %>% 
-                as.numeric() - 12, # centred
+                str_extract("\\d+°C") %>% fct(),
               grazing = if_else(
                 treatment %>% str_detect("Grazed"),
-                0.5, -0.5 # effect-coded
+                0.5, -0.5
               )
             ) %>%
-            select(t, m, species, replicate, 
-                   temperature, grazing) %>%
+            select(t, m, species, temperature, 
+                   grazing, replicate) %>%
             compose_data(),
           chains = 8,
           parallel_chains = parallel::detectCores(),
@@ -7589,13 +7594,13 @@ Vandendriessche_samples$summary() %>%
   summarise(rhat_1.001 = mean( rhat > 1.001 ),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# 0.4% of rhat above 1.001. rhat = 1.00 ± 0.000186.
+# No rhat above 1.001. rhat = 1.00 ± 0.0000731.
 
 Vandendriessche_k_samples$summary() %>%
   summarise(rhat_1.001 = mean( rhat > 1.001 ),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No of rhat above 1.001. rhat = 1.00 ± 0.0000607.
+# No of rhat above 1.001. rhat = 1.00 ± 0.000108.
 
 # Chains
 Vandendriessche_chains <- Vandendriessche_samples$draws(format = "df") %>%
@@ -7627,13 +7632,11 @@ Vandendriessche_k_chains %>%
 # Pairs
 Vandendriessche_samples$draws(format = "df") %>%
   mcmc_pairs(
-    pars = c("log_alpha_mu", "log_alpha_sigma_s", "log_alpha_s[1]", "log_alpha_s[2]",
-             "log_alpha_sigma_r", "log_alpha_r[10]", "log_alpha_r[20]",
-             "log_mu_mu", "log_mu_sigma_s", "log_mu_s[1]", "log_mu_s[2]",
-             "log_mu_sigma_r", "log_mu_r[10]", "log_mu_r[20]",
-             "log_beta_mu", "log_beta_sigma", "log_beta[1]", "log_beta[2]",
-             "log_tau_mu", "log_tau_sigma_s", "log_tau_s[1]", "log_tau_s[2]",
-             "log_tau_sigma_r", "log_tau_r[10]", "log_tau_r[20]",
+    pars = c("log_alpha_s[1]", "log_alpha_s[2]", "log_alpha_r[10]", "log_alpha_r[20]",
+             "log_mu_s[1]", "log_mu_s[2]", "log_mu_t[1]", "log_mu_t[2]", 
+             "beta_mu[1]", "beta_mu[2]", "log_mu_r[10]", "log_mu_r[20]",
+             "log_tau_s[1]", "log_tau_s[2]", "log_tau_t[1]", "log_tau_t[2]", 
+             "beta_tau[1]", "beta_tau[2]", "log_tau_r[10]", "log_tau_r[20]",
              "epsilon", "lambda", "theta"),
     grid_args = list(top = "Macroalgal model")
   ) %>%
@@ -7642,14 +7645,12 @@ Vandendriessche_samples$draws(format = "df") %>%
 
 Vandendriessche_k_samples$draws(format = "df") %>%
   mcmc_pairs(
-    pars = c("log_k_mu", "log_k_sigma_s", "log_k_s[1]", "log_k_s[2]",
-             "log_k_sigma_r", "log_k_r[10]", "log_k_r[20]",
-             "beta_mu", "beta_sigma", "beta[1]", "beta[2]",
-             "sigma"),
+    pars = c("log_k_s[1]", "log_k_s[2]", "log_k_t[1]", "log_k_t[2]",
+             "beta[1]", "beta[2]", "log_k_r[10]", "log_k_r[20]", "sigma"),
     grid_args = list(top = "Conventional model")
   ) %>%
   ggsave(filename = "Vandendriessche_k_pairs.png", path = "Plots",
-         width = 55, height = 55, units = "cm", bg = "white")
+         width = 45, height = 45, units = "cm", bg = "white")
 
 # 6.6.5 Prior-posterior comparison ####
 Vandendriessche_prior <- prior_samples(
@@ -7657,29 +7658,34 @@ Vandendriessche_prior <- prior_samples(
   data = data %>%
     filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
     droplevels() %>%
-    # mutate(
-    #   temperature = treatment %>% 
-    #     str_extract("\\d+") %>% 
-    #     as.numeric() - 12, # centred
-    #   grazing = if_else(
-    #     treatment %>% str_detect("Grazed"),
-    #     0.5, -0.5 # effect-coded
-    #   )
-    # ) %>%
-    select(t, m, replicate) %>%
+    mutate(
+      temperature = treatment %>% 
+        str_extract("\\d+°C") %>% fct(),
+      grazing = if_else(
+        treatment %>% str_detect("Grazed"),
+        0.5, -0.5
+      )
+    ) %>%
+    select(t, m, species, temperature, 
+           grazing, replicate) %>%
     compose_data()
 )
 
 Vandendriessche_k_prior <- prior_samples(
   model = Vandendriessche_k_model,
   data = data %>%
-    filter(reference == "Frontier et al. 2022" & t != 0) %>%
+    filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
     droplevels() %>%
-    mutate(depth = treatment %>% 
-             str_extract("[\\d.]+") %>% 
-             as.numeric()) %>%
-    select(t, m, species, 
-           replicate, depth) %>%
+    mutate(
+      temperature = treatment %>% 
+        str_extract("\\d+°C") %>% fct(),
+      grazing = if_else(
+        treatment %>% str_detect("Grazed"),
+        0.5, -0.5
+      )
+    ) %>%
+    select(t, m, species, temperature, 
+           grazing, replicate) %>%
     compose_data()
 )
 
@@ -7689,14 +7695,14 @@ Vandendriessche_prior_posterior_species <- Vandendriessche_prior %>%
     group = data %>%
       filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
       droplevels() %>%
-      select(replicate),
-    parameters = c("log_alpha[replicate]",
-                   "log_mu[replicate]",
-                   "log_tau[replicate]",
-                   "nu"),
+      select(species),
+    parameters = c("log_alpha_s[species]",
+                   "log_mu_s[species]",
+                   "log_tau_s[species]",
+                   "epsilon", "lambda", "theta"),
     format = "long"
     ) %>%
-  prior_posterior_plot(group_name = "replicate") +
+  prior_posterior_plot(group_name = "species") +
   scale_x_continuous(
     labels = scales::label_number(style_negative = "minus")
   ) +
@@ -7708,16 +7714,46 @@ Vandendriessche_prior_posterior_species <- Vandendriessche_prior %>%
         axis.text.y = element_blank(),
         axis.title = element_blank())
 
-Frontier2022_prior_posterior_replicate <- Frontier2022_prior %>% 
+Vandendriessche_prior_posterior_temperature <- Vandendriessche_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Frontier2022_samples,
-    group = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
+    posterior_samples = Vandendriessche_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
+      droplevels() %>%
+      mutate(
+        temperature = treatment %>% 
+          str_extract("\\d+°C") %>% fct(),
+        grazing = if_else(
+          treatment %>% str_detect("Grazed"),
+          0.5, -0.5
+        )
+      ) %>%
+      select(temperature),
+    parameters = c("log_mu_t[temperature]", "beta_mu[temperature]",
+                   "log_tau_t[temperature]", "beta_tau[temperature]"),
+    format = "long"
+    ) %>%
+  prior_posterior_plot(group_name = "temperature") +
+  scale_x_continuous(
+    labels = scales::label_number(style_negative = "minus")
+  ) +
+  coord_cartesian(expand = FALSE) +
+  mytheme +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title = element_blank())
+
+Vandendriessche_prior_posterior_replicate <- Vandendriessche_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Vandendriessche_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
       droplevels() %>%
       select(replicate),
-    parameters = c("log_alpha_sigma_r", "log_alpha_r[replicate]",
-                   "log_mu_sigma_r", "log_mu_r[replicate]",
-                   "log_tau_sigma_r", "log_tau_r[replicate]"),
+    parameters = c("log_alpha_r[replicate]",
+                   "log_mu_r[replicate]",
+                   "log_tau_r[replicate]"),
     format = "long"
     ) %>%
   prior_posterior_plot(group_name = "replicate", ridges = TRUE) +
@@ -7731,15 +7767,14 @@ Frontier2022_prior_posterior_replicate <- Frontier2022_prior %>%
         axis.text.y = element_blank(),
         axis.title = element_blank())
 
-Frontier2022_k_prior_posterior_species <- Frontier2022_k_prior %>% 
+Vandendriessche_k_prior_posterior_species <- Vandendriessche_k_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Frontier2022_k_samples,
-    group = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
+    posterior_samples = Vandendriessche_k_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
       droplevels() %>%
       select(species),
-    parameters = c("log_k_mu", "log_k_sigma_s", "log_k_s[species]",
-                   "beta_mu", "beta_sigma", "beta[species]", "sigma"),
+    parameters = c("log_k_s[species]", "sigma"),
     format = "long"
     ) %>%
   prior_posterior_plot(group_name = "species") +
@@ -7754,14 +7789,43 @@ Frontier2022_k_prior_posterior_species <- Frontier2022_k_prior %>%
         axis.text.y = element_blank(),
         axis.title = element_blank())
 
-Frontier2022_k_prior_posterior_replicate <- Frontier2022_k_prior %>% 
+Vandendriessche_k_prior_posterior_temperature <- Vandendriessche_k_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Frontier2022_k_samples,
-    group = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
+    posterior_samples = Vandendriessche_k_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
+      droplevels() %>%
+      mutate(
+        temperature = treatment %>% 
+          str_extract("\\d+°C") %>% fct(),
+        grazing = if_else(
+          treatment %>% str_detect("Grazed"),
+          0.5, -0.5
+        )
+      ) %>%
+      select(temperature),
+    parameters = c("log_k_t[temperature]", "beta[temperature]"),
+    format = "long"
+    ) %>%
+  prior_posterior_plot(group_name = "temperature") +
+  scale_x_continuous(
+    labels = scales::label_number(style_negative = "minus")
+  ) +
+  coord_cartesian(expand = FALSE) +
+  mytheme +
+  theme(axis.line.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.title = element_blank())
+
+Vandendriessche_k_prior_posterior_replicate <- Vandendriessche_k_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Vandendriessche_k_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
       droplevels() %>%
       select(replicate),
-    parameters = c("log_k_sigma_r", "log_k_r[replicate]"),
+    parameters = c("log_k_r[replicate]"),
     format = "long"
     ) %>%
   prior_posterior_plot(group_name = "replicate", ridges = TRUE) +
@@ -7775,496 +7839,410 @@ Frontier2022_k_prior_posterior_replicate <- Frontier2022_k_prior %>%
         axis.text.y = element_blank(),
         axis.title = element_blank())
 
-Frontier2022_prior_posterior <- 
-  ( Frontier2022_prior_posterior_species / 
-      Frontier2022_prior_posterior_replicate / 
-      Frontier2022_k_prior_posterior_species / 
-      Frontier2022_k_prior_posterior_replicate ) +
-  plot_layout(heights = c(1, 2/5, 3/5, 1/5))
+Vandendriessche_prior_posterior <- 
+  ( Vandendriessche_prior_posterior_species / 
+      Vandendriessche_prior_posterior_temperature / 
+      Vandendriessche_prior_posterior_replicate / 
+      Vandendriessche_k_prior_posterior_species /
+      ( Vandendriessche_k_prior_posterior_temperature | 
+          Vandendriessche_k_prior_posterior_replicate ) ) +
+  plot_layout(heights = c(3/4, 1, 3/4, 1/6, 3/4))
 
-Frontier2022_prior_posterior %>%
-  ggsave(filename = "Frontier2022_prior_posterior.pdf", path = "Plots",
+Vandendriessche_prior_posterior %>%
+  ggsave(filename = "Vandendriessche_prior_posterior.pdf", path = "Plots",
          device = cairo_pdf, width = 40, height = 60, units = "cm")
 
 # 6.6.6 Parameter distributions ####
-# Macroalgal model treatment parameters
-Frontier2022_prior_posterior_global <- Frontier2022_prior %>% 
+# Macroalgal model species and treatment parameters
+Vandendriessche_prior_posterior <- Vandendriessche_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Frontier2022_samples,
-    parameters = c("log_alpha_mu", "log_alpha_sigma_s", "log_alpha_sigma_r",
-                   "log_mu_mu", "log_mu_sigma_s", "log_mu_sigma_r",
-                   "log_tau_mu", "log_tau_sigma_s", "log_tau_sigma_r",
-                   "log_beta_mu", "log_beta_sigma", "epsilon", "lambda", "theta"),
-    format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates from new species
-    alpha = exp(
-      rnorm( n() , log_alpha_mu , log_alpha_sigma_s ) +
-        rnorm( n() , 0 , log_alpha_sigma_r )
-    ),
-    beta = exp( rnorm( n() , log_beta_mu , log_beta_sigma ) ),
-    mu_0.5m = exp(
-      rnorm( n() , log_mu_mu , log_mu_sigma_s ) +
-        rnorm( n() , 0 , log_mu_sigma_r ) - beta * 0.5
-    ),
-    mu_1.5m = exp(
-      rnorm( n() , log_mu_mu , log_mu_sigma_s ) +
-        rnorm( n() , 0 , log_mu_sigma_r ) - beta * 1.5
-    ),
-    mu_3m = exp(
-      rnorm( n() , log_mu_mu , log_mu_sigma_s ) +
-        rnorm( n() , 0 , log_mu_sigma_r ) - beta * 3
-    ),
-    tau = exp(
-      rnorm( n() , log_tau_mu , log_tau_sigma_s ) +
-        rnorm( n() , 0 , log_tau_sigma_r )
-    )
-  ) %>%
-  pivot_longer(cols = starts_with("mu"),
-               names_to = "treatment",
-               values_to = "mu",
-               names_prefix = "mu_") %>%
-  select(-starts_with("log")) %T>%
-  print()
-
-Frontier2022_prior_posterior_species <- Frontier2022_prior %>% 
-  prior_posterior_draws(
-    posterior_samples = Frontier2022_samples,
-    group = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
+    posterior_samples = Vandendriessche_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
       droplevels() %>%
-      select(species),
-    parameters = c("log_alpha_s[species]", "log_mu_s[species]", "log_tau_s[species]", 
-                   "log_beta[species]", "log_alpha_sigma_r", "log_mu_sigma_r", 
-                   "log_tau_sigma_r", "epsilon", "lambda", "theta"),
+      mutate(
+        temperature = treatment %>% 
+          str_extract("\\d+°C") %>% fct(),
+        grazing = if_else(
+          treatment %>% str_detect("Grazed"),
+          0.5, -0.5
+        )
+      ) %>%
+      select(species, temperature),
+    parameters = c("log_alpha_s[species]", "log_mu_s[species]", 
+                   "log_mu_t[temperature]", "beta_mu[temperature]",
+                   "log_tau_s[species]", "log_tau_t[temperature]",
+                   "beta_tau[temperature]", "epsilon", "lambda", "theta"),
     format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates
-    alpha = exp( rnorm( n() , log_alpha_s , log_alpha_sigma_r ) ),
-    beta = exp( log_beta ),
-    mu_0.5m = exp(
-      rnorm( n() , log_mu_s , log_mu_sigma_r ) - beta * 0.5
-    ),
-    mu_1.5m = exp(
-      rnorm( n() , log_mu_s , log_mu_sigma_r ) - beta * 1.5
-    ),
-    mu_3m = exp(
-      rnorm( n() , log_mu_s , log_mu_sigma_r ) - beta * 3
-    ),
-    tau = exp( rnorm( n() , log_tau_s , log_tau_sigma_r ) )
   ) %>%
-  pivot_longer(cols = starts_with("mu"),
-               names_to = "treatment",
-               values_to = "mu",
-               names_prefix = "mu_") %>%
-  filter(species == "Laminaria hyperborea" & distribution == "prior" |
+  mutate( # Predict for species and treatments averaged over replicates
+    alpha = exp( log_alpha_s ),
+    mu_Grazed = exp( log_mu_s + log_mu_t + beta_mu * 0.5 ),
+    mu_Control = exp( log_mu_s + log_mu_t + beta_mu * -0.5 ),
+    tau_Grazed = exp( log_tau_s + log_tau_t + beta_tau * 0.5 ),
+    tau_Control = exp( log_tau_s + log_tau_t + beta_tau * -0.5 )
+  ) %>%
+  pivot_longer(cols = c(starts_with("mu"), starts_with("tau")),
+               names_to = c("parameter", "grazing"),
+               names_sep = "_") %>%
+  pivot_wider(names_from = "parameter") %>%
+  filter(species == "Fucus vesiculosus" & distribution == "prior" |
            distribution == "posterior") %>%
   mutate(
     species = if_else(
       distribution == "prior", "Prior", species
-    ) %>% fct()
+    ) %>% fct(),
+    grazing = grazing %>% fct()
   ) %>%
-  select(-c(distribution, starts_with("log"))) %T>%
+  select(-c(distribution, starts_with("log"), starts_with("beta"))) %T>%
   print()
 
-Frontier2022_prior_posterior <- Frontier2022_prior_posterior_species %>%
-  bind_rows(
-    Frontier2022_prior_posterior_global %>%
-      filter(distribution == "posterior") %>%
-      select(-distribution) %>%
-      mutate(species = "Global" %>% fct())
-  ) %T>%
-  print()
-
-# Macroalgal model depth effect parameters
-Frontier2022_prior_posterior_beta_global <- Frontier2022_prior %>% 
+# Macroalgal model temperature and grazing effect parameters
+Vandendriessche_prior_posterior_beta <- Vandendriessche_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Frontier2022_samples,
-    parameters = c("log_mu_mu", "log_mu_sigma_s", "log_mu_sigma_r",
-                   "log_beta_mu", "log_beta_sigma"),
-    format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates from new species
-    beta = exp( rnorm( n() , log_beta_mu , log_beta_sigma ) ),
-    log_mu = rnorm( n() , log_mu_mu , log_mu_sigma_s ) +
-      rnorm( n() , 0 , log_mu_sigma_r )
-  ) %>%
-  select(starts_with("."), distribution, beta, log_mu) %T>%
-  print()
-
-Frontier2022_prior_posterior_beta_species <- Frontier2022_prior %>% 
-  prior_posterior_draws(
-    posterior_samples = Frontier2022_samples,
-    group = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
+    posterior_samples = Vandendriessche_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
       droplevels() %>%
-      select(species),
-    parameters = c("log_mu_s[species]", "log_mu_sigma_r", "log_beta[species]"),
+      mutate(
+        temperature = treatment %>% 
+          str_extract("\\d+°C") %>% fct(),
+        grazing = if_else(
+          treatment %>% str_detect("Grazed"),
+          0.5, -0.5
+        )
+      ) %>%
+      select(temperature),
+    parameters = c("log_mu_t[temperature]", "beta_mu[temperature]",
+                   "log_tau_t[temperature]", "beta_tau[temperature]"),
     format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates
-    beta = exp( log_beta ),
-    log_mu = rnorm( n() , log_mu_s , log_mu_sigma_r )
   ) %>%
-  filter(species == "Laminaria hyperborea" & distribution == "prior" |
+  filter(temperature == "10°C" & distribution == "prior" |
            distribution == "posterior") %>%
   mutate(
-    species = if_else(
-      distribution == "prior", "Prior", species
+    temperature = if_else(
+      distribution == "prior", "Prior", temperature
     ) %>% fct()
   ) %>%
-  select(starts_with("."), species, beta, log_mu) %T>%
-  print()
-
-Frontier2022_prior_posterior_beta <- Frontier2022_prior_posterior_beta_species %>%
-  bind_rows(
-    Frontier2022_prior_posterior_beta_global %>%
-      filter(distribution == "posterior") %>%
-      select(-distribution) %>%
-      mutate(species = "Global" %>% fct())
-  ) %T>%
+  select(-distribution) %T>%
   print()
 
 # Macroalgal model replicate parameters
-Frontier2022_prior_posterior_replicate <- data %>% # Get pairs from data
-  filter(reference == "Frontier et al. 2022") %>%
+# Replicates blow up R if added in prior_posterior_draws(parameters) alongside
+# species and temperatures because prior_posterior_draws tries to cross all
+# factors. Replicates are in fact unique per species-treatment combination so
+# as with any nested factors I need to left_join as before for Frontier et al.
+Vandendriessche_prior_posterior_replicate <- data %>% # Get nesting from data
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
-  mutate(depth = treatment %>% 
-           str_extract("[\\d.]+") %>% 
-           as.numeric()) %>%
-  distinct(species, replicate, treatment, depth) %>%
-  left_join( # Join species distributions
-    Frontier2022_prior %>% 
+  mutate(
+    temperature = treatment %>% 
+      str_extract("\\d+°C") %>% fct(),
+    grazing = if_else(
+      treatment %>% str_detect("Grazed"),
+      0.5, -0.5
+    )
+  ) %>%
+  distinct(species, temperature, grazing, replicate) %>% # 52 reps = 52 combinations
+  left_join(
+    Vandendriessche_prior %>% 
       prior_posterior_draws(
-        posterior_samples = Frontier2022_samples,
-        group = data %>% 
-          filter(reference == "Frontier et al. 2022") %>%
+        posterior_samples = Vandendriessche_samples,
+        group = data %>%
+          filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
           droplevels() %>%
-          select(species),
+          mutate(
+            temperature = treatment %>% 
+              str_extract("\\d+°C") %>% fct(),
+            grazing = if_else(
+              treatment %>% str_detect("Grazed"),
+              0.5, -0.5
+            )
+          ) %>%
+          select(species, temperature), # species and temperature are crossed in the experiment
         parameters = c("log_alpha_s[species]", "log_mu_s[species]", 
-                       "log_tau_s[species]", "log_beta[species]"),
+                       "log_mu_t[temperature]", "beta_mu[temperature]",
+                       "log_tau_s[species]", "log_tau_t[temperature]",
+                       "beta_tau[temperature]", "epsilon", "lambda", "theta"),
         format = "short"
       ),
-    by = "species",
+    by = c("species", "temperature"),
     relationship = "many-to-many"
   ) %>%
-  left_join( # Join replicate distributions
-    Frontier2022_prior %>% 
+  left_join(
+    Vandendriessche_prior %>% 
       prior_posterior_draws(
-        posterior_samples = Frontier2022_samples,
-        group = data %>% 
-          filter(reference == "Frontier et al. 2022") %>%
+        posterior_samples = Vandendriessche_samples,
+        group = data %>%
+          filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
           droplevels() %>%
           select(replicate),
         parameters = c("log_alpha_r[replicate]", 
-                       "log_mu_r[replicate]", 
+                       "log_mu_r[replicate]",
                        "log_tau_r[replicate]"),
         format = "short"
       ),
-    by = c("replicate", ".chain", ".iteration", ".draw", "distribution"),
+    by = c("replicate", "distribution", ".chain", ".iteration", ".draw"),
     relationship = "many-to-many"
-  ) %>% 
-  mutate( # Calculate for existing replicates
+  ) %>%
+  mutate(
     alpha = exp( log_alpha_s + log_alpha_r ),
-    beta = exp( log_beta ),
-    mu = exp( log_mu_s + log_mu_r - beta * depth ),
-    tau = exp( log_tau_s + log_tau_r )
-  ) %>% # Pick one replicate from each depth for priors to keep
-  filter(replicate %in% c("1", "5", "9") & distribution == "prior" |
+    mu = exp( log_mu_s + log_mu_t + beta_mu * grazing + log_mu_r ),
+    tau = exp( log_tau_s + log_tau_t + beta_tau * grazing + log_tau_r )
+  ) %>% # pick one replicate for grazing and one for control for prior
+  filter(replicate %in% c("1", "2") & distribution == "prior" |
            distribution == "posterior") %>%
   mutate(
     species = if_else(
       distribution == "prior", "Prior", species
+    ) %>% fct(),
+    temperature = if_else(
+      distribution == "prior", "Prior", temperature
     ) %>% fct(),
     replicate = if_else(
       distribution == "prior", "Prior", replicate
+    ) %>% fct()
+  ) %>%
+  select(-c(distribution, starts_with("log"), starts_with("beta"))) %T>%
+  print()
+  
+# Conventional model species and treatment parameters
+Vandendriessche_k_prior_posterior <- Vandendriessche_k_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Vandendriessche_k_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
+      droplevels() %>%
+      mutate(
+        temperature = treatment %>% 
+          str_extract("\\d+°C") %>% fct(),
+        grazing = if_else(
+          treatment %>% str_detect("Grazed"),
+          0.5, -0.5
+        )
+      ) %>%
+      select(species, temperature),
+    parameters = c("log_k_s[species]", "log_k_t[temperature]", 
+                   "beta[temperature]", "sigma"),
+    format = "short"
+  ) %>%
+  mutate( # Predict for species and treatments averaged over replicates
+    k_Grazed = exp( log_k_s + log_k_t + beta * 0.5 ),
+    k_Control = exp( log_k_s + log_k_t + beta * -0.5 )
+  ) %>%
+  pivot_longer(cols = starts_with("k"),
+               names_to = "grazing",
+               values_to = "k",
+               names_prefix = "k_") %>%
+  filter(species == "Fucus vesiculosus" & distribution == "prior" |
+           distribution == "posterior") %>%
+  mutate(
+    species = if_else(
+      distribution == "prior", "Prior", species
     ) %>% fct(),
-    treatment = if_else(
-      distribution == "prior", "Prior", treatment
-    ) %>% fct()
+    grazing = grazing %>% fct()
   ) %>%
-  select(-c(distribution, starts_with("log"))) %T>%
+  select(-c(distribution, starts_with("log"), starts_with("beta"))) %T>%
   print()
 
-# Conventional model treatment parameters
-Frontier2022_k_prior_posterior_global <- Frontier2022_k_prior %>% 
+# Conventional model temperature and grazing effect parameters
+Vandendriessche_k_prior_posterior_beta <- Vandendriessche_k_prior %>% 
   prior_posterior_draws(
-    posterior_samples = Frontier2022_k_samples,
-    parameters = c("log_k_mu", "log_k_sigma_s", "log_k_sigma_r",
-                   "beta_mu", "beta_sigma", "sigma"),
-    format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates from new species
-    beta = rnorm( n() , beta_mu , beta_sigma ),
-    k_0.5m = exp(
-      rnorm( n() , log_k_mu , log_k_sigma_s ) +
-        rnorm( n() , 0 , log_k_sigma_r ) + beta * 0.5
-    ),
-    k_1.5m = exp(
-      rnorm( n() , log_k_mu , log_k_sigma_s ) +
-        rnorm( n() , 0 , log_k_sigma_r ) + beta * 1.5
-    ),
-    k_3m = exp(
-      rnorm( n() , log_k_mu , log_k_sigma_s ) +
-        rnorm( n() , 0 , log_k_sigma_r ) + beta * 3
-    )
-  ) %>%
-  pivot_longer(cols = starts_with("k"),
-               names_to = "treatment",
-               values_to = "k",
-               names_prefix = "k_") %>%
-  select(-c(starts_with("log"), beta_mu, beta_sigma)) %T>%
-  print()
-
-Frontier2022_k_prior_posterior_species <- Frontier2022_k_prior %>% 
-  prior_posterior_draws(
-    posterior_samples = Frontier2022_k_samples,
-    group = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
+    posterior_samples = Vandendriessche_k_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
       droplevels() %>%
-      select(species),
-    parameters = c("log_k_s[species]", "beta[species]", 
-                   "log_k_sigma_r", "sigma"),
+      mutate(
+        temperature = treatment %>% 
+          str_extract("\\d+°C") %>% fct(),
+        grazing = if_else(
+          treatment %>% str_detect("Grazed"),
+          0.5, -0.5
+        )
+      ) %>%
+      select(temperature),
+    parameters = c("log_k_t[temperature]", "beta[temperature]"),
     format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates
-    k_0.5m = exp(
-      rnorm( n() , log_k_s , log_k_sigma_r ) + beta * 0.5
-    ),
-    k_1.5m = exp(
-      rnorm( n() , log_k_s , log_k_sigma_r ) + beta * 1.5
-    ),
-    k_3m = exp(
-      rnorm( n() , log_k_s , log_k_sigma_r ) + beta * 3
-    )
   ) %>%
-  pivot_longer(cols = starts_with("k"),
-               names_to = "treatment",
-               values_to = "k",
-               names_prefix = "k_") %>%
-  filter(species == "Laminaria hyperborea" & distribution == "prior" |
+  filter(temperature == "10°C" & distribution == "prior" |
            distribution == "posterior") %>%
   mutate(
-    species = if_else(
-      distribution == "prior", "Prior", species
+    temperature = if_else(
+      distribution == "prior", "Prior", temperature
     ) %>% fct()
   ) %>%
-  select(-c(distribution, starts_with("log"))) %T>%
-  print()
-
-Frontier2022_k_prior_posterior <- Frontier2022_k_prior_posterior_species %>%
-  bind_rows(
-    Frontier2022_k_prior_posterior_global %>%
-      filter(distribution == "posterior") %>%
-      select(-distribution) %>%
-      mutate(species = "Global" %>% fct())
-  ) %T>%
-  print()
-
-# Conventional model depth effect parameters
-Frontier2022_k_prior_posterior_beta_global <- Frontier2022_k_prior %>% 
-  prior_posterior_draws(
-    posterior_samples = Frontier2022_k_samples,
-    parameters = c("log_k_mu", "log_k_sigma_s", "log_k_sigma_r",
-                   "beta_mu", "beta_sigma"),
-    format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates from new species
-    beta = rnorm( n() , beta_mu , beta_sigma ),
-    log_k = rnorm( n() , log_k_mu , log_k_sigma_s ) +
-      rnorm( n() , 0 , log_k_sigma_r )
-  ) %>%
-  select(starts_with("."), distribution, beta, log_k) %T>%
-  print()
-
-Frontier2022_k_prior_posterior_beta_species <- Frontier2022_k_prior %>% 
-  prior_posterior_draws(
-    posterior_samples = Frontier2022_k_samples,
-    group = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
-      droplevels() %>%
-      select(species),
-    parameters = c("log_k_s[species]", "log_k_sigma_r", "beta[species]"),
-    format = "short"
-  ) %>% 
-  mutate( # Calculate for new replicates
-    log_k = rnorm( n() , log_k_s , log_k_sigma_r )
-  ) %>%
-  filter(species == "Laminaria hyperborea" & distribution == "prior" |
-           distribution == "posterior") %>%
-  mutate(
-    species = if_else(
-      distribution == "prior", "Prior", species
-    ) %>% fct()
-  ) %>%
-  select(starts_with("."), species, beta, log_k) %T>%
-  print()
-
-Frontier2022_k_prior_posterior_beta <- Frontier2022_k_prior_posterior_beta_species %>%
-  bind_rows(
-    Frontier2022_k_prior_posterior_beta_global %>%
-      filter(distribution == "posterior") %>%
-      select(-distribution) %>%
-      mutate(species = "Global" %>% fct())
-  ) %T>%
+  select(-distribution) %T>%
   print()
 
 # Conventional model replicate parameters
-Frontier2022_k_prior_posterior_replicate <- data %>% # Get pairs from data
-  filter(reference == "Frontier et al. 2022") %>%
+Vandendriessche_k_prior_posterior_replicate <- data %>% # Get nesting from data
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
-  mutate(depth = treatment %>% 
-           str_extract("[\\d.]+") %>% 
-           as.numeric()) %>%
-  distinct(species, replicate, treatment, depth) %>%
-  left_join( # Join species distributions
-    Frontier2022_k_prior %>% 
+  mutate(
+    temperature = treatment %>% 
+      str_extract("\\d+°C") %>% fct(),
+    grazing = if_else(
+      treatment %>% str_detect("Grazed"),
+      0.5, -0.5
+    )
+  ) %>%
+  distinct(species, temperature, grazing, replicate) %>% # 52 reps = 52 combinations
+  left_join(
+    Vandendriessche_k_prior %>% 
       prior_posterior_draws(
-        posterior_samples = Frontier2022_k_samples,
-        group = data %>% 
-          filter(reference == "Frontier et al. 2022") %>%
+        posterior_samples = Vandendriessche_k_samples,
+        group = data %>%
+          filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
           droplevels() %>%
-          select(species),
-        parameters = c("log_k_s[species]", "beta[species]"),
+          mutate(
+            temperature = treatment %>% 
+              str_extract("\\d+°C") %>% fct(),
+            grazing = if_else(
+              treatment %>% str_detect("Grazed"),
+              0.5, -0.5
+            )
+          ) %>%
+          select(species, temperature), # species and temperature are crossed in the experiment
+        parameters = c("log_k_s[species]", "log_k_t[temperature]", 
+                       "beta[temperature]", "sigma"),
         format = "short"
       ),
-    by = "species",
+    by = c("species", "temperature"),
     relationship = "many-to-many"
   ) %>%
-  left_join( # Join replicate distributions
-    Frontier2022_k_prior %>% 
+  left_join(
+    Vandendriessche_k_prior %>% 
       prior_posterior_draws(
-        posterior_samples = Frontier2022_k_samples,
-        group = data %>% 
-          filter(reference == "Frontier et al. 2022") %>%
+        posterior_samples = Vandendriessche_k_samples,
+        group = data %>%
+          filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
           droplevels() %>%
           select(replicate),
         parameters = c("log_k_r[replicate]"),
         format = "short"
       ),
-    by = c("replicate", ".chain", ".iteration", ".draw", "distribution"),
+    by = c("replicate", "distribution", ".chain", ".iteration", ".draw"),
     relationship = "many-to-many"
-  ) %>% 
-  mutate( # Calculate for existing replicates
-    k = exp( log_k_s + log_k_r + beta * depth )
-  ) %>% # Pick one replicate from each depth for priors to keep
-  filter(replicate %in% c("1", "5", "9") & distribution == "prior" |
+  ) %>%
+  mutate(
+    k = exp( log_k_s + log_k_t + beta * grazing + log_k_r )
+  ) %>%
+  filter(replicate %in% c("1", "2") & distribution == "prior" |
            distribution == "posterior") %>%
   mutate(
     species = if_else(
       distribution == "prior", "Prior", species
     ) %>% fct(),
+    temperature = if_else(
+      distribution == "prior", "Prior", temperature
+    ) %>% fct(),
     replicate = if_else(
       distribution == "prior", "Prior", replicate
-    ) %>% fct(),
-    treatment = if_else(
-      distribution == "prior", "Prior", treatment
     ) %>% fct()
   ) %>%
-  select(-c(distribution, starts_with("log"))) %T>%
+  select(-c(distribution, starts_with("log"), starts_with("beta"))) %T>%
   print()
 
 # Save parameter distributions
-Frontier2022_prior_posterior %>%
-  write_rds(here("RDS", "Frontier2022_prior_posterior.rds"))
-Frontier2022_prior_posterior_beta %>%
-  write_rds(here("RDS", "Frontier2022_prior_posterior_beta.rds"))
-Frontier2022_prior_posterior_replicate %>%
-  write_rds(here("RDS", "Frontier2022_prior_posterior_replicate.rds"))
+Vandendriessche_prior_posterior %>%
+  write_rds(here("RDS", "Vandendriessche_prior_posterior.rds"))
+Vandendriessche_prior_posterior_beta %>%
+  write_rds(here("RDS", "Vandendriessche_prior_posterior_beta.rds"))
+Vandendriessche_prior_posterior_replicate %>%
+  write_rds(here("RDS", "Vandendriessche_prior_posterior_replicate.rds"))
 
-Frontier2022_k_prior_posterior %>%
-  write_rds(here("RDS", "Frontier2022_k_prior_posterior.rds"))
-Frontier2022_k_prior_posterior_beta %>%
-  write_rds(here("RDS", "Frontier2022_k_prior_posterior_beta.rds"))
-Frontier2022_k_prior_posterior_replicate %>%
-  write_rds(here("RDS", "Frontier2022_k_prior_posterior_replicate.rds"))
+Vandendriessche_k_prior_posterior %>%
+  write_rds(here("RDS", "Vandendriessche_k_prior_posterior.rds"))
+Vandendriessche_k_prior_posterior_beta %>%
+  write_rds(here("RDS", "Vandendriessche_k_prior_posterior_beta.rds"))
+Vandendriessche_k_prior_posterior_replicate %>%
+  write_rds(here("RDS", "Vandendriessche_k_prior_posterior_replicate.rds"))
 
 # 6.6.7 Continuous prediction ####
-# Treatment predictions
-Frontier2022_prediction <- Frontier2022_prior_posterior %>%
-  spread_continuous(data = data %>% 
-                      filter(reference == "Frontier et al. 2022") %>%
-                      droplevels(), # All groups have the same predictor range
-                    predictor_name = "t") %>%
-  mutate(
-    m_mu = exp(
-      t * alpha - ( alpha + tau ) * mu / 5 * (
-        log1p_exp( 5 / mu * ( t - mu ) ) -
-          log1p_exp( -5 )
-      )
-    ),
-    k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
-    nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
-    m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
-  ) %>%
-  group_by(t, species, treatment) %>%
-  median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
-  print()
-
-Frontier2022_k_prediction <- Frontier2022_k_prior_posterior %>%
-  spread_continuous(data = data %>% 
-                      filter(reference == "Frontier et al. 2022") %>%
-                      droplevels(),
-                    predictor_name = "t") %>%
-  mutate(
-    m_mu = exp( -k * t ),
-    m = rnorm( n() , m_mu , sigma )
-  ) %>%
-  group_by(t, species, treatment) %>%
-  median_qi(m_mu, m, .width = c(.5, .8, .9)) %T>%
-  print()
-
-# Save predictions
-Frontier2022_prediction %>%
-  write_rds(here("RDS", "Frontier2022_prediction.rds"))
-
-Frontier2022_k_prediction %>%
-  write_rds(here("RDS", "Frontier2022_k_prediction.rds"))
-
-# Continuous depth predictions
-Frontier2022_prediction_beta <- Frontier2022_prior_posterior_beta %>%
-  spread_continuous(data = data %>%
-                      filter(reference == "Frontier et al. 2022") %>%
-                      droplevels() %>%
-                      mutate(depth = treatment %>% # Be sure to extract depth
-                               str_extract("[\\d.]+") %>% 
-                               as.numeric()),
-                    predictor_name = "depth") %>%
-  mutate( mu = exp( log_mu - beta * depth ) ) %>%
-  group_by(depth, species) %>%
-  median_qi(mu, .width = c(.5, .8, .9)) %T>%
-  print()
-
-Frontier2022_k_prediction_beta <- Frontier2022_k_prior_posterior_beta %>%
-  spread_continuous(data = data %>%
-                      filter(reference == "Frontier et al. 2022") %>%
-                      droplevels() %>%
-                      mutate(depth = treatment %>%
-                               str_extract("[\\d.]+") %>% 
-                               as.numeric()),
-                    predictor_name = "depth") %>%
-  mutate( k = exp( log_k + beta * depth ) ) %>%
-  group_by(depth, species) %>%
-  median_qi(k, .width = c(.5, .8, .9)) %T>%
-  print()
-
-# Save predictions
-Frontier2022_prediction_beta %>%
-  write_rds(here("RDS", "Frontier2022_prediction_beta.rds"))
-
-Frontier2022_k_prediction_beta %>%
-  write_rds(here("RDS", "Frontier2022_k_prediction_beta.rds"))
-
-# Replicate predictions require a different approach
-Frontier2022_prediction_replicate <- Frontier2022_prior_posterior_replicate %>%
-  group_by(species, replicate, treatment, depth) %>% 
+# Macroalgal model species and treatment predictions
+Vandendriessche_prediction <- Vandendriessche_prior_posterior %>%
+  group_by(species, temperature, grazing) %>% 
   nest(.key = "prior_posterior") %>%
   ungroup() %>%
+  left_join(
+    data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
+      droplevels() %>%
+      separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+      mutate(temperature = temperature %>% fct(),
+             grazing = grazing %>% fct()) %>%
+      select(species, temperature, grazing, t) %>%
+      group_by(species, temperature, grazing) %>% 
+      nest(.key = "t") %>%
+      ungroup()
+  ) %>%
   mutate(
-    predictor = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
-      droplevels() %$%
-      list( seq(min(t), max(t), length.out = 100) ),
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>%
+            filter(reference == "Vandendriessche et al. 2007") %$%
+            seq(min(t), max(t), length.out = 100)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 100)
+        }
+      ),
+    prediction = map2(
+      prior_posterior, predictor,
+      ~.x %>% 
+        slice( rep( 1:n() , each = length(.y) ) ) %>%
+        mutate(
+          t = rep( .y , times = nrow(.x) ),
+          m_mu = exp(
+            t * alpha - ( alpha + tau ) * mu / 5 * (
+              log1p_exp( 5 / mu * ( t - mu ) ) -
+                log1p_exp( -5 )
+            )
+          ),
+          k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
+          nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
+          m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
+        ) %>%
+        group_by(t) %>%
+        median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
+        print()
+    )
+  ) %>% 
+  select(-c(prior_posterior, t, predictor)) %>%
+  unnest(prediction) %T>%
+  print()
+
+# Macroalgal model replicate predictions
+Vandendriessche_prediction_replicate <- Vandendriessche_prior_posterior_replicate %>%
+  mutate(grazing = if_else(grazing == 0.5, "Grazed", "Control") %>% fct()) %>%
+  group_by(species, temperature, grazing, replicate) %>% 
+  nest(.key = "prior_posterior") %>%
+  ungroup() %>%
+  left_join(
+    data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
+      droplevels() %>%
+      separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+      mutate(temperature = temperature %>% fct(),
+             grazing = grazing %>% fct()) %>%
+      select(species, temperature, grazing, replicate, t) %>%
+      group_by(species, temperature, grazing, replicate) %>% 
+      nest(.key = "t") %>%
+      ungroup()
+  ) %>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>%
+            filter(reference == "Vandendriessche et al. 2007") %$%
+            seq(min(t), max(t), length.out = 100)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 100)
+        }
+      ),
     prediction = map2(
       prior_posterior, predictor,
       ~.x %>% 
@@ -8284,19 +8262,87 @@ Frontier2022_prediction_replicate <- Frontier2022_prior_posterior_replicate %>%
         print()
     )
   ) %>% 
-  select(-c(prior_posterior, predictor)) %>%
+  select(-c(prior_posterior, t, predictor)) %>%
   unnest(prediction) %T>%
   print()
 
-Frontier2022_k_prediction_replicate <- Frontier2022_k_prior_posterior_replicate %>%
-  group_by(species, replicate, treatment, depth) %>% 
+# Conventional model species and treatment predictions
+Vandendriessche_k_prediction <- Vandendriessche_k_prior_posterior %>%
+  group_by(species, temperature, grazing) %>% 
   nest(.key = "prior_posterior") %>%
   ungroup() %>%
+  left_join(
+    data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
+      droplevels() %>%
+      separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+      mutate(temperature = temperature %>% fct(),
+             grazing = grazing %>% fct()) %>%
+      select(species, temperature, grazing, t) %>%
+      group_by(species, temperature, grazing) %>% 
+      nest(.key = "t") %>%
+      ungroup()
+  ) %>%
   mutate(
-    predictor = data %>% 
-      filter(reference == "Frontier et al. 2022") %>%
-      droplevels() %$%
-      list( seq(min(t), max(t), length.out = 100) ),
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>%
+            filter(reference == "Vandendriessche et al. 2007") %$%
+            seq(min(t), max(t), length.out = 100)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 100)
+        }
+      ),
+    prediction = map2(
+      prior_posterior, predictor,
+      ~.x %>% 
+        slice( rep( 1:n() , each = length(.y) ) ) %>%
+        mutate(
+          t = rep( .y , times = nrow(.x) ),
+          m_mu = exp( -k * t ),
+          m = rnorm( n() , m_mu , sigma )
+        ) %>%
+        group_by(t) %>%
+        median_qi(m_mu, m, .width = c(.5, .8, .9)) %T>%
+        print()
+    )
+  ) %>% 
+  select(-c(prior_posterior, t, predictor)) %>%
+  unnest(prediction) %T>%
+  print()
+
+# Conventional model replicate predictions
+Vandendriessche_k_prediction_replicate <- Vandendriessche_k_prior_posterior_replicate %>%
+  mutate(grazing = if_else(grazing == 0.5, "Grazed", "Control") %>% fct()) %>%
+  group_by(species, temperature, grazing, replicate) %>% 
+  nest(.key = "prior_posterior") %>%
+  ungroup() %>%
+  left_join(
+    data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
+      droplevels() %>%
+      separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+      mutate(temperature = temperature %>% fct(),
+             grazing = grazing %>% fct()) %>%
+      select(species, temperature, grazing, replicate, t) %>%
+      group_by(species, temperature, grazing, replicate) %>% 
+      nest(.key = "t") %>%
+      ungroup()
+  ) %>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>%
+            filter(reference == "Vandendriessche et al. 2007") %$%
+            seq(min(t), max(t), length.out = 100)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 100)
+        }
+      ),
     prediction = map2(
       prior_posterior, predictor,
       ~.x %>% 
@@ -8310,153 +8356,162 @@ Frontier2022_k_prediction_replicate <- Frontier2022_k_prior_posterior_replicate 
         print()
     )
   ) %>% 
-  select(-c(prior_posterior, predictor)) %>%
+  select(-c(prior_posterior, t, predictor)) %>%
   unnest(prediction) %T>%
   print()
 
 # Save predictions
-Frontier2022_prediction_replicate %>%
-  write_rds(here("RDS", "Frontier2022_prediction_replicate.rds"))
+Vandendriessche_prediction %>%
+  write_rds(here("RDS", "Vandendriessche_prediction.rds"))
+Vandendriessche_prediction_replicate %>%
+  write_rds(here("RDS", "Vandendriessche_prediction_replicate.rds"))
 
-Frontier2022_k_prediction_replicate %>%
-  write_rds(here("RDS", "Frontier2022_k_prediction_replicate.rds"))
+Vandendriessche_k_prediction %>%
+  write_rds(here("RDS", "Vandendriessche_k_prediction.rds"))
+Vandendriessche_k_prediction_replicate %>%
+  write_rds(here("RDS", "Vandendriessche_k_prediction_replicate.rds"))
 
 # 6.6.8 Visualisation of predictions ####
 # Viusalise mean predictions
 data %>%
-  filter(reference == "Frontier et al. 2022" & t != 0) %>%
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
+  separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+  mutate(temperature = temperature %>% fct(),
+         grazing = grazing %>% fct()) %>%
   ggplot() +
-    geom_point(aes(t, m, colour = treatment), shape = 16, alpha = 0.5) +
-    geom_line(data = Frontier2022_prediction %>%
-                filter(!species %in% c("Prior", "Global")),
-              aes(t, m_mu, colour = treatment)) +
-    geom_ribbon(data = Frontier2022_prediction %>%
-                  filter(!species %in% c("Prior", "Global")),
+    geom_point(aes(t, m, colour = temperature), shape = 16, alpha = 0.5) +
+    geom_line(data = Vandendriessche_prediction %>%
+                filter(species != "Prior"),
+              aes(t, m_mu, colour = temperature)) +
+    geom_ribbon(data = Vandendriessche_prediction %>%
+                  filter(species != "Prior"),
                 aes(t, ymin = m_mu.lower, ymax = m_mu.upper, 
-                    alpha = factor(.width), fill = treatment)) +
+                    alpha = factor(.width), fill = temperature)) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(treatment ~ species) +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
 data %>%
-  filter(reference == "Frontier et al. 2022" & t != 0) %>%
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
+  separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+  mutate(temperature = temperature %>% fct(),
+         grazing = grazing %>% fct()) %>%
   ggplot() +
-    geom_point(aes(t, m, colour = treatment), shape = 16, alpha = 0.5) +
-    geom_line(data = Frontier2022_k_prediction %>%
-                filter(!species %in% c("Prior", "Global")),
-              aes(t, m_mu, colour = treatment)) +
-    geom_ribbon(data = Frontier2022_k_prediction %>%
-                  filter(!species %in% c("Prior", "Global")),
+    geom_point(aes(t, m, colour = temperature), shape = 16, alpha = 0.5) +
+    geom_line(data = Vandendriessche_k_prediction %>%
+                filter(species != "Prior"),
+              aes(t, m_mu, colour = temperature)) +
+    geom_ribbon(data = Vandendriessche_k_prediction %>%
+                  filter(species != "Prior"),
                 aes(t, ymin = m_mu.lower, ymax = m_mu.upper, 
-                    alpha = factor(.width), fill = treatment)) +
+                    alpha = factor(.width), fill = temperature)) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(treatment ~ species) +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
 # Visualise predictions of new observations
 data %>%
-  filter(reference == "Frontier et al. 2022" & t != 0) %>%
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
+  separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+  mutate(temperature = temperature %>% fct(),
+         grazing = grazing %>% fct()) %>%
   ggplot() +
-    geom_point(aes(t, m, colour = treatment), shape = 16, alpha = 0.5) +
-    geom_line(data = Frontier2022_prediction %>%
-                filter(!species %in% c("Prior", "Global")),
-              aes(t, m, colour = treatment)) +
-    geom_ribbon(data = Frontier2022_prediction %>%
-                  filter(!species %in% c("Prior", "Global")),
+    geom_point(aes(t, m, colour = temperature), shape = 16, alpha = 0.5) +
+    geom_line(data = Vandendriessche_prediction %>%
+                filter(species != "Prior"),
+              aes(t, m, colour = temperature)) +
+    geom_ribbon(data = Vandendriessche_prediction %>%
+                  filter(species != "Prior"),
                 aes(t, ymin = m.lower, ymax = m.upper, 
-                    alpha = factor(.width), fill = treatment)) +
+                    alpha = factor(.width), fill = temperature)) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(treatment ~ species) +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
 data %>%
-  filter(reference == "Frontier et al. 2022" & t != 0) %>%
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
+  separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+  mutate(temperature = temperature %>% fct(),
+         grazing = grazing %>% fct()) %>%
   ggplot() +
-    geom_point(aes(t, m, colour = treatment), shape = 16, alpha = 0.5) +
-    geom_line(data = Frontier2022_k_prediction %>%
-                filter(!species %in% c("Prior", "Global")),
-              aes(t, m, colour = treatment)) +
-    geom_ribbon(data = Frontier2022_k_prediction %>%
-                  filter(!species %in% c("Prior", "Global")),
+    geom_point(aes(t, m, colour = temperature), shape = 16, alpha = 0.5) +
+    geom_line(data = Vandendriessche_k_prediction %>%
+                filter(species != "Prior"),
+              aes(t, m, colour = temperature)) +
+    geom_ribbon(data = Vandendriessche_k_prediction %>%
+                  filter(species != "Prior"),
                 aes(t, ymin = m.lower, ymax = m.upper, 
-                    alpha = factor(.width), fill = treatment)) +
+                    alpha = factor(.width), fill = temperature)) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(treatment ~ species) +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
 # Visualise predictions of replicates
 data %>%
-  filter(reference == "Frontier et al. 2022" & t != 0) %>%
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
+  separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+  mutate(temperature = temperature %>% fct(),
+         grazing = grazing %>% fct()) %>%
   ggplot() +
-    geom_point(aes(t, m, colour = treatment), shape = 16, alpha = 0.5) +
-    geom_line(data = Frontier2022_prediction_replicate %>%
-                filter(!species %in% c("Prior", "Global")),
-              aes(t, m_mu, colour = treatment, group = replicate),
-              alpha = 0.5) +
-    facet_grid(treatment ~ species) +
+    geom_point(aes(t, m, colour = temperature), shape = 16, alpha = 0.5) +
+    geom_line(data = Vandendriessche_prediction_replicate %>%
+                filter(species != "Prior"),
+              aes(t, m_mu, colour = temperature, group = replicate)) +
+    geom_ribbon(data = Vandendriessche_prediction_replicate %>%
+                  filter(species != "Prior"),
+                aes(t, ymin = m_mu.lower, ymax = m_mu.upper, 
+                    alpha = factor(.width), fill = temperature,
+                    group = interaction(replicate, .width))) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
 data %>%
-  filter(reference == "Frontier et al. 2022" & t != 0) %>%
+  filter(reference == "Vandendriessche et al. 2007") %>%
   droplevels() %>%
+  separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+  mutate(temperature = temperature %>% fct(),
+         grazing = grazing %>% fct()) %>%
   ggplot() +
-    geom_point(aes(t, m, colour = treatment), shape = 16, alpha = 0.5) +
-    geom_line(data = Frontier2022_k_prediction_replicate %>%
-                filter(!species %in% c("Prior", "Global")),
-              aes(t, m_mu, colour = treatment, group = replicate),
-              alpha = 0.5) +
-    facet_grid(treatment ~ species) +
-    mytheme
-
-# Visualise predictions by depth
-Frontier2022_prediction_beta %>%
-  filter(!species %in% c("Prior", "Global")) %>%
-  ggplot() +
-    geom_line(aes(depth, mu),
-              alpha = 0.5) +
-    geom_ribbon(aes(depth, ymin = .lower, ymax = .upper,
-                    alpha = factor(.width))) +
+    geom_point(aes(t, m, colour = temperature), shape = 16, alpha = 0.5) +
+    geom_line(data = Vandendriessche_k_prediction_replicate %>%
+                filter(species != "Prior"),
+              aes(t, m_mu, colour = temperature, group = replicate)) +
+    # geom_ribbon(data = Vandendriessche_k_prediction_replicate %>%
+    #               filter(species != "Prior"),
+    #             aes(t, ymin = .lower, ymax = .upper, 
+    #                 alpha = factor(.width), fill = temperature,
+    #                 group = interaction(replicate, .width))) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(~ species) +
-    mytheme
-
-Frontier2022_k_prediction_beta %>%
-  filter(!species %in% c("Prior", "Global")) %>%
-  ggplot() +
-    geom_line(aes(depth, k),
-              alpha = 0.5) +
-    geom_ribbon(aes(depth, ymin = .lower, ymax = .upper,
-                    alpha = factor(.width))) +
-    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(~ species) +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
 # Visualise predictions of time-variant k
-Frontier2022_prediction %>%
-  filter(!species %in% c("Prior", "Global")) %>%
+Vandendriessche_prediction %>%
+  filter(species != "Prior") %>%
   ggplot() +
-    geom_line(aes(t, k, colour = treatment)) +
+    geom_line(aes(t, k, colour = temperature)) +
     geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper, 
-                    alpha = factor(.width), fill = treatment)) +
+                    alpha = factor(.width), fill = temperature)) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(treatment ~ species) +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
-Frontier2022_prediction_replicate %>%
-  filter(!species %in% c("Prior", "Global")) %>%
+Vandendriessche_prediction_replicate %>%
+  filter(species != "Prior") %>%
   ggplot() +
-    geom_line(aes(t, k, colour = treatment, group = replicate)) +
-    facet_grid(treatment ~ species) +
+    geom_line(aes(t, k, colour = temperature, group = replicate)) +
+    facet_nested(temperature ~ species + grazing, nest_line = TRUE) +
     mytheme
 
 # Visualise predictions of time-variant nu (global)
-Frontier2022_prediction %>%
-  filter(species == "Global") %>%
+Vandendriessche_prediction %>%
+  filter(species == "Fucus vesiculosus") %>%
   ggplot() +
     geom_line(aes(t, nu)) +
     geom_ribbon(aes(t, ymin = nu.lower, ymax = nu.upper, 
