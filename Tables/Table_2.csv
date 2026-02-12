@@ -1,0 +1,68 @@
+reference,species,treatment,log_tau_k_ratio,P_tau_k,log_t0.5_mu_ratio,P_t0.5_mu
+Brouwer,Desmarestia anceps,Prior,-0.00098 ± 0.33,0.5,-1.2 ± 0.4,0.0067
+Brouwer,Desmarestia anceps,Control,2 ± 0.14,1,0.32 ± 0.12,0.99
+Brouwer,Desmarestia anceps,Pre-killed,0.2 ± 0.11,0.98,-0.14 ± 0.16,0.17
+Hamersley,Macrocystis pyrifera,Prior,-0.0015 ± 0.43,0.5,-0.46 ± 0.43,0.13
+Hamersley,Macrocystis pyrifera,Fresh,0.3 ± 0.052,1,0.25 ± 0.08,1
+Hamersley,Macrocystis pyrifera,Senescent,0.068 ± 0.045,0.93,0.65 ± 0.13,1
+Hamersley,Macrocystis pyrifera,Detached,0.11 ± 0.05,0.99,0.58 ± 0.2,0.99
+Hamersley,Macrocystis pyrifera,Global,0.1 ± 0.3,0.67,0.18 ± 0.46,0.67
+Bettignies,Laminaria hyperborea,Prior,-0.00063 ± 0.43,0.5,-0.0097 ± 0.36,0.49
+Bettignies,Laminaria hyperborea,Fresh,0.082 ± 0.053,0.94,0.64 ± 0.15,1
+Bettignies,Laminaria hyperborea,Global,0.099 ± 0.48,0.59,0.16 ± 0.48,0.64
+Bettignies,Laminaria hyperborea,Senescent Experiment 1,0.027 ± 0.17,0.6,-0.086 ± 0.37,0.42
+Bettignies,Laminaria hyperborea,Senescent Experiment 2,0.47 ± 0.11,1,0.29 ± 0.17,0.99
+Bourguès,Ulvaria obscura,Prior,-0.00055 ± 0.44,0.5,-0.34 ± 0.44,0.21
+Bourguès,Ulvaria obscura,Global,0.38 ± 0.41,0.84,0.056 ± 0.52,0.55
+Bourguès,Ulvaria obscura,Spring,0.55 ± 0.2,1,0.19 ± 0.18,0.88
+Bourguès,Ulvaria obscura,Summer,0.2 ± 0.19,0.88,0.47 ± 0.31,0.95
+Bourguès,Ulvaria obscura,Autumn,0.75 ± 0.19,1,0.12 ± 0.16,0.78
+Bourguès,Ulvaria obscura,Winter,0.61 ± 0.33,0.95,0.2 ± 0.34,0.73
+Frontier2021,Laminaria hyperborea,0m,2.3 ± 0.78,1,0.87 ± 0.85,0.85
+Frontier2021,Laminaria hyperborea,15m,1.4 ± 0.7,0.98,0.5 ± 0.78,0.75
+Frontier2021,Laminaria hyperborea,30m,0.5 ± 0.73,0.76,0.13 ± 0.82,0.56
+Frontier2021,Prior,0m,0.00079 ± 0.76,0.5,-1.2 ± 0.76,0.05
+Frontier2021,Prior,15m,0.005 ± 1.2,0.5,-0.89 ± 1.2,0.22
+Frontier2021,Prior,30m,0.011 ± 2,0.5,-0.53 ± 2,0.39
+Frontier2021,Laminaria ochroleuca,0m,1.6 ± 0.72,0.98,0.24 ± 0.79,0.62
+Frontier2021,Laminaria ochroleuca,15m,1.4 ± 0.69,0.98,0.3 ± 0.77,0.65
+Frontier2021,Laminaria ochroleuca,30m,1.1 ± 0.73,0.94,0.36 ± 0.8,0.68
+Frontier2021,Global,0m,0.77 ± 1.2,0.76,-0.56 ± 1.2,0.33
+Frontier2021,Global,15m,0.38 ± 1.4,0.62,-0.57 ± 1.5,0.35
+Frontier2021,Global,30m,-0.015 ± 1.9,0.5,-0.58 ± 2,0.37
+Frontier2022,Laminaria hyperborea,0.5m,2.7 ± 0.88,1,1.4 ± 0.81,0.97
+Frontier2022,Laminaria hyperborea,1.5m,2.5 ± 0.86,1,1.3 ± 0.79,0.96
+Frontier2022,Laminaria hyperborea,3m,2.2 ± 0.87,1,1.1 ± 0.81,0.92
+Frontier2022,Prior,0.5m,0.0019 ± 0.77,0.5,-1.2 ± 0.76,0.055
+Frontier2022,Prior,1.5m,0.00043 ± 0.81,0.5,-1.1 ± 0.8,0.082
+Frontier2022,Prior,3m,0.0015 ± 0.94,0.5,-0.9 ± 0.94,0.16
+Frontier2022,Laminaria ochroleuca,0.5m,2 ± 0.84,0.99,0.77 ± 0.77,0.85
+Frontier2022,Laminaria ochroleuca,1.5m,1.9 ± 0.82,0.99,0.7 ± 0.75,0.84
+Frontier2022,Laminaria ochroleuca,3m,1.6 ± 0.84,0.97,0.59 ± 0.77,0.79
+Frontier2022,Global,0.5m,0.68 ± 1.4,0.7,-0.56 ± 1.3,0.34
+Frontier2022,Global,1.5m,0.53 ± 1.4,0.66,-0.6 ± 1.4,0.33
+Frontier2022,Global,3m,0.33 ± 1.5,0.6,-0.64 ± 1.5,0.33
+Vandendriessche,Prior,10°C Grazed,-0.00039 ± 0.66,0.5,-0.64 ± 0.67,0.17
+Vandendriessche,Prior,10°C Control,0.0025 ± 0.66,0.5,-0.63 ± 0.66,0.17
+Vandendriessche,Prior,15°C Grazed,6e-04 ± 0.66,0.5,-0.64 ± 0.66,0.17
+Vandendriessche,Prior,15°C Control,0.00028 ± 0.66,0.5,-0.64 ± 0.66,0.17
+Vandendriessche,Prior,18°C Grazed,0.00055 ± 0.66,0.5,-0.64 ± 0.66,0.17
+Vandendriessche,Prior,18°C Control,0.0021 ± 0.66,0.5,-0.63 ± 0.66,0.17
+Vandendriessche,Prior,5°C Grazed,0.00068 ± 0.66,0.5,-0.64 ± 0.66,0.17
+Vandendriessche,Prior,5°C Control,0.0012 ± 0.67,0.5,-0.64 ± 0.67,0.17
+Vandendriessche,Fucus vesiculosus,10°C Grazed,1.1 ± 0.2,1,0.079 ± 0.2,0.65
+Vandendriessche,Fucus vesiculosus,10°C Control,1.1 ± 0.2,1,0.39 ± 0.2,0.97
+Vandendriessche,Fucus vesiculosus,15°C Grazed,0.76 ± 0.2,1,0.31 ± 0.2,0.94
+Vandendriessche,Fucus vesiculosus,15°C Control,1.1 ± 0.21,1,0.4 ± 0.21,0.97
+Vandendriessche,Fucus vesiculosus,18°C Grazed,0.73 ± 0.19,1,0.28 ± 0.19,0.93
+Vandendriessche,Fucus vesiculosus,18°C Control,1.2 ± 0.21,1,0.24 ± 0.2,0.88
+Vandendriessche,Fucus vesiculosus,5°C Grazed,2.9 ± 0.24,1,0.59 ± 0.23,1
+Vandendriessche,Fucus vesiculosus,5°C Control,3.5 ± 0.27,1,1.4 ± 0.26,1
+Vandendriessche,Ascophyllum nodosum,10°C Grazed,0.49 ± 0.19,0.99,0.3 ± 0.19,0.94
+Vandendriessche,Ascophyllum nodosum,10°C Control,0.46 ± 0.2,0.99,0.61 ± 0.2,1
+Vandendriessche,Ascophyllum nodosum,15°C Grazed,0.11 ± 0.19,0.72,0.53 ± 0.2,1
+Vandendriessche,Ascophyllum nodosum,15°C Control,0.43 ± 0.2,0.98,0.62 ± 0.2,1
+Vandendriessche,Ascophyllum nodosum,18°C Grazed,0.081 ± 0.19,0.66,0.5 ± 0.19,1
+Vandendriessche,Ascophyllum nodosum,18°C Control,0.59 ± 0.2,1,0.47 ± 0.2,0.99
+Vandendriessche,Ascophyllum nodosum,5°C Grazed,2.3 ± 0.23,1,0.81 ± 0.23,1
+Vandendriessche,Ascophyllum nodosum,5°C Control,2.8 ± 0.26,1,1.6 ± 0.25,1
