@@ -295,32 +295,34 @@ Frontier_param_rhat_ess <- bind_rows(
 
 # 2.1.5 Chains ####
 # Define custom plotting theme
-mytheme <- theme(panel.background = element_blank(),
-                 panel.grid.major = element_blank(),
-                 panel.grid.minor = element_blank(),
-                 panel.border = element_blank(),
-                 plot.margin = margin(0.2, 0.5, 0.2, 0.2, unit = "cm"),
-                 axis.line = element_line(),
-                 axis.title = element_text(size = 12, hjust = 0),
-                 axis.text = element_text(size = 10, colour = "black"),
-                 axis.ticks.length = unit(.25, "cm"),
-                 axis.ticks = element_line(colour = "black", lineend = "square"),
-                 legend.key = element_blank(),
-                 legend.key.width = unit(.25, "cm"),
-                 legend.key.height = unit(.45, "cm"),
-                 legend.key.spacing.x = unit(.5, "cm"),
-                 legend.key.spacing.y = unit(.05, "cm"),
-                 legend.background = element_blank(),
-                 legend.position = "top",
-                 legend.justification = 0,
-                 legend.text = element_text(size = 12, hjust = 0),
-                 legend.title = element_blank(),
-                 legend.margin = margin(0, 0, 0, 0, unit = "cm"),
-                 strip.background = element_blank(),
-                 strip.text = element_text(size = 12, hjust = 0),
-                 panel.spacing.x = unit(1, "cm"),
-                 panel.spacing.y = unit(0.6, "cm"),
-                 text = element_text(family = "Futura"))
+mytheme <- theme(
+  panel.background = element_blank(),
+  panel.grid.major = element_blank(),
+  panel.grid.minor = element_blank(),
+  panel.border = element_blank(),
+  plot.margin = margin(0.2, 0.5, 0.2, 0.2, unit = "cm"),
+  axis.line = element_line(),
+  axis.title = element_text(size = 12, hjust = 0),
+  axis.text = element_text(size = 10, colour = "black"),
+  axis.ticks.length = unit(.25, "cm"),
+  axis.ticks = element_line(colour = "black", lineend = "square"),
+  legend.key = element_blank(),
+  legend.key.width = unit(.25, "cm"),
+  legend.key.height = unit(.45, "cm"),
+  legend.key.spacing.x = unit(.5, "cm"),
+  legend.key.spacing.y = unit(.05, "cm"),
+  legend.background = element_blank(),
+  legend.position = "top",
+  legend.justification = 0,
+  legend.text = element_text(size = 12, hjust = 0),
+  legend.title = element_blank(),
+  legend.margin = margin(0, 0, 0, 0, unit = "cm"),
+  strip.background = element_blank(),
+  strip.text = element_text(size = 12, hjust = 0),
+  panel.spacing.x = unit(1, "cm"),
+  panel.spacing.y = unit(0.6, "cm"),
+  text = element_text(family = "Futura")
+)
 
 require(bayesplot)
 Frontier_full_chains <- Frontier_full_samples$draws(format = "df") %>%
@@ -952,7 +954,7 @@ rm(
 gc()
 
 # 2.3 Save diagnostic tables ####
-Table_S1 <- Frontier_param_rhat_ess %>%
+param_rhat_ess <- Frontier_param_rhat_ess %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_param_rhat_ess %>%
@@ -963,10 +965,10 @@ Table_S1 <- Frontier_param_rhat_ess %>%
          starts_with("ess")) %T>%
   print()
 
-Table_S1 %>%
-  write_csv(here("Tables", "Table_S1.csv"))
+param_rhat_ess %>%
+  write_csv(here("Tables", "Diagnostic", "param_rhat_ess.csv"))
 
-Table_S2 <- Frontier_param_loo %>%
+param_loo <- Frontier_param_loo %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_param_loo %>%
@@ -975,8 +977,8 @@ Table_S2 <- Frontier_param_loo %>%
   select(reference, model, everything()) %T>%
   print()
 
-Table_S2 %>%
-  write_csv(here("Tables", "Table_S2.csv"))
+param_loo %>%
+  write_csv(here("Tables", "Diagnostic", "param_loo.csv"))
 
 # Models are fairly similar when there are lots of data,
 # but the relative parameterisation is best in most cases.
@@ -1915,7 +1917,7 @@ rm(
 gc()
 
 # 3.3 Save diagnostic tables ####
-Table_S3 <- Frontier_lik_rhat_ess %>%
+lik_rhat_ess <- Frontier_lik_rhat_ess %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_lik_rhat_ess %>%
@@ -1926,10 +1928,10 @@ Table_S3 <- Frontier_lik_rhat_ess %>%
          starts_with("ess")) %T>%
   print()
 
-Table_S3 %>%
-  write_csv(here("Tables", "Table_S3.csv"))
+lik_rhat_ess %>%
+  write_csv(here("Tables", "Diagnostic", "lik_rhat_ess.csv"))
 
-Table_S4 <- Frontier_lik_loo %>%
+lik_loo <- Frontier_lik_loo %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_lik_loo %>%
@@ -1938,8 +1940,8 @@ Table_S4 <- Frontier_lik_loo %>%
   select(reference, model, everything()) %T>%
   print()
 
-Table_S4 %>%
-  write_csv(here("Tables", "Table_S4.csv"))
+lik_loo %>%
+  write_csv(here("Tables", "Diagnostic", "lik_loo.csv"))
 
 # Gamma and beta prime have emerged as the best likelihoods.
 # Beta prime is the mot sensible likelihood given the nature
@@ -2833,7 +2835,7 @@ rm(
 gc()
 
 # 4.3 Save diagnostic tables ####
-Table_S5 <- Frontier_het_rhat_ess %>%
+het_rhat_ess <- Frontier_het_rhat_ess %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_het_rhat_ess %>%
@@ -2844,10 +2846,10 @@ Table_S5 <- Frontier_het_rhat_ess %>%
          starts_with("ess")) %T>%
   print()
 
-Table_S5 %>%
-  write_csv(here("Tables", "Table_S5.csv"))
+het_rhat_ess %>%
+  write_csv(here("Tables", "Diagnostic", "het_rhat_ess.csv"))
 
-Table_S6 <- Frontier_het_loo %>%
+het_loo <- Frontier_het_loo %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_het_loo %>%
@@ -2856,8 +2858,8 @@ Table_S6 <- Frontier_het_loo %>%
   select(reference, model, everything()) %T>%
   print()
 
-Table_S6 %>%
-  write_csv(here("Tables", "Table_S6.csv"))
+het_loo %>%
+  write_csv(here("Tables", "Diagnostic", "het_loo.csv"))
 
 # Heteroskedastic models are harder to fit but definitely
 # have better predictive performance.
@@ -3338,7 +3340,7 @@ rm(
 gc()
 
 # 5.3 Save diagnostic tables ####
-Table_S7 <- Frontier_conv_rhat_ess %>%
+conv_rhat_ess <- Frontier_conv_rhat_ess %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_conv_rhat_ess %>%
@@ -3349,10 +3351,10 @@ Table_S7 <- Frontier_conv_rhat_ess %>%
          starts_with("ess")) %T>%
   print()
 
-Table_S7 %>%
-  write_csv(here("Tables", "Table_S7.csv"))
+conv_rhat_ess %>%
+  write_csv(here("Tables", "Diagnostic", "conv_rhat_ess.csv"))
 
-Table_S8 <- Frontier_conv_loo %>%
+conv_loo <- Frontier_conv_loo %>%
   mutate(reference = "Frontier et al. 2022") %>%
   bind_rows(
     Vandendriessche_conv_loo %>%
@@ -3361,8 +3363,8 @@ Table_S8 <- Frontier_conv_loo %>%
   select(reference, model, everything()) %T>%
   print()
 
-Table_S8 %>%
-  write_csv(here("Tables", "Table_S8.csv"))
+conv_loo %>%
+  write_csv(here("Tables", "Diagnostic", "conv_loo.csv"))
 
 # For simple averages, the conventional model may have similar
 # predictive performance, but for prediction of the trajectory
@@ -4831,10 +4833,10 @@ data %>%
 
 # 6.4.2 Prior simulation ####
 tibble(n = 1:1e3,
-       log_alpha_mu = rnorm( 1e3 , log(0.01) , 0.5 ), 
+       log_alpha_mu = rnorm( 1e3 , log(0.005) , 0.2 ), 
        log_mu_mu = rnorm( 1e3 , log(15) , 0.5 ),
        log_tau_mu = rnorm( 1e3 , log(0.1) , 0.5 ),
-       log_alpha_sigma = rtnorm( 1e3 , 0 , 0.5 , 0 ),
+       log_alpha_sigma = rtnorm( 1e3 , 0 , 0.2 , 0 ),
        log_mu_sigma = rtnorm( 1e3 , 0 , 0.5 , 0 ),
        log_tau_sigma = rtnorm( 1e3 , 0 , 0.5 , 0 ),
        alpha = rnorm( 1e3 , log_alpha_mu , log_alpha_sigma ) %>% exp(),
@@ -4862,7 +4864,7 @@ tibble(n = 1:1e3,
                  filter(reference == "Bourguès et al. 1996") %$%
                  range(m)) +
     geom_line(alpha = 0.05) +
-    coord_cartesian(ylim = c(0, 4), expand = F, clip = "off") +
+    coord_cartesian(expand = F, clip = "off") +
     facet_wrap(~parameter, scale = "free", nrow = 1) +
     theme_minimal() +
     theme(panel.grid = element_blank())
@@ -4945,13 +4947,13 @@ Bourguès_samples$summary() %>%
   summarise(rhat_1.001 = mean( rhat > 1.001 ),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No of rhat above 1.001. rhat = 1.00 ± 0.000240.
+# No of rhat above 1.001. rhat = 1.00 ± 0.000122.
 
 Bourguès_k_samples$summary() %>%
   summarise(rhat_1.001 = mean( rhat > 1.001 ),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No of rhat above 1.001. rhat = 1.00 ± 0.000143.
+# No of rhat above 1.001. rhat = 1.00 ± 0.000156.
 
 # Chains
 Bourguès_chains <- Bourguès_samples$draws(format = "df") %>%
@@ -4977,18 +4979,17 @@ Bourguès_chains <- ( Bourguès_chains / Bourguès_k_chains ) +
 
 Bourguès_chains %>%
   ggsave(filename = "Bourguès_chains.pdf", path = "Plots",
-         device = cairo_pdf, width = 40, height = 40, units = "cm")
+         device = cairo_pdf, width = 50, height = 40, units = "cm")
 
 # Pairs
 Bourguès_samples$draws(format = "df") %>%
   mcmc_pairs(
     pars = c("log_alpha_mu", "log_alpha_sigma", "log_alpha[1]", 
-             "log_alpha[2]", "log_alpha[3]", "log_alpha[4]",
-             "log_mu_mu", "log_mu_sigma", "log_mu[1]", 
-             "log_mu[2]", "log_mu[3]", "log_mu[4]",
-             "log_tau_mu", "log_tau_sigma", "log_tau[1]", 
-             "log_tau[2]", "log_tau[3]", "log_tau[4]",
-             "epsilon", "lambda", "theta"),
+             "log_alpha[4]", "log_mu_mu", "log_mu_sigma", "log_mu[1]", 
+             "log_mu[4]", "log_tau_mu", "log_tau_sigma", "log_tau[1]", 
+             "log_tau[4]", "epsilon", "log_lambda_mu", "log_lambda_sigma", 
+             "log_lambda[1]", "log_lambda[4]", "log_theta_mu", 
+             "log_theta_sigma", "log_theta[1]", "log_theta[4]"),
     grid_args = list(top = "Macroalgal model")
   ) %>%
   ggsave(filename = "Bourguès_pairs.png", path = "Plots",
@@ -4996,13 +4997,13 @@ Bourguès_samples$draws(format = "df") %>%
 
 Bourguès_k_samples$draws(format = "df") %>%
   mcmc_pairs(
-    pars = c("log_k_mu", "log_k_sigma", "log_k[1]", 
-             "log_k[2]", "log_k[3]", "log_k[4]",
-             "sigma"),
+    pars = c("log_k_mu", "log_k_sigma", "log_k[1]", "log_k[2]", 
+             "log_k[3]", "log_k[4]", "log_sigma_mu", "log_sigma_sigma",
+             "log_sigma[1]", "log_sigma[2]", "log_sigma[3]", "log_sigma[4]"),
     grid_args = list(top = "Conventional model")
   ) %>%
   ggsave(filename = "Bourguès_k_pairs.png", path = "Plots",
-         width = 35, height = 35, units = "cm", bg = "white")
+         width = 60, height = 60, units = "cm", bg = "white")
 
 # 6.4.5 Prior-posterior comparison ####
 Bourguès_prior <- prior_samples(
@@ -5033,7 +5034,9 @@ Bourguès_prior_posterior <- Bourguès_prior %>%
     parameters = c("log_alpha_mu", "log_alpha_sigma", "log_alpha[treatment]",
                    "log_mu_mu", "log_mu_sigma", "log_mu[treatment]",
                    "log_tau_mu", "log_tau_sigma", "log_tau[treatment]",
-                   "epsilon", "lambda", "theta"),
+                   "epsilon", "log_lambda_mu", "log_lambda_sigma",
+                   "log_lambda[treatment]", "log_theta_mu", "log_theta_sigma",
+                   "log_theta[treatment]"),
     format = "long"
     ) %>%
   prior_posterior_plot(group_name = "treatment") +
@@ -5056,7 +5059,7 @@ Bourguès_k_prior_posterior <- Bourguès_k_prior %>%
       droplevels() %>%
       select(treatment),
     parameters = c("log_k_mu", "log_k_sigma", "log_k[treatment]",
-                   "sigma"),
+                   "log_sigma_mu", "log_sigma_sigma", "log_sigma[treatment]"),
     format = "long"
     ) %>%
   prior_posterior_plot(group_name = "treatment") +
@@ -5087,13 +5090,16 @@ Bourguès_prior_posterior_global <- Bourguès_prior %>%
     parameters = c("log_alpha_mu", "log_alpha_sigma",
                    "log_mu_mu", "log_mu_sigma",
                    "log_tau_mu", "log_tau_sigma",
-                   "epsilon", "lambda", "theta"),
+                   "epsilon", "log_lambda_mu", "log_lambda_sigma",
+                   "log_theta_mu", "log_theta_sigma"),
     format = "short"
   ) %>% 
   mutate(
     alpha = rnorm( n() , log_alpha_mu , log_alpha_sigma ) %>% exp(),
     mu = rnorm( n() , log_mu_mu , log_mu_sigma ) %>% exp(),
-    tau = rnorm( n() , log_tau_mu , log_tau_sigma ) %>% exp()
+    tau = rnorm( n() , log_tau_mu , log_tau_sigma ) %>% exp(),
+    lambda = rnorm( n() , log_lambda_mu , log_lambda_sigma ) %>% exp(),
+    theta = rnorm( n() , log_theta_mu , log_theta_sigma ) %>% exp()
   ) %>%
   select(!ends_with("_mu") & !ends_with("_sigma")) %T>%
   print()
@@ -5106,7 +5112,8 @@ Bourguès_prior_posterior_treatment <- Bourguès_prior %>%
       droplevels() %>%
       select(treatment),
     parameters = c("log_alpha[treatment]", "log_mu[treatment]", 
-                   "log_tau[treatment]", "epsilon", "lambda", "theta"),
+                   "log_tau[treatment]", "epsilon", 
+                   "log_lambda[treatment]", "log_theta[treatment]"),
     format = "short"
   ) %>% 
   mutate(
@@ -5137,11 +5144,13 @@ Bourguès_prior_posterior <- Bourguès_prior_posterior_treatment %>%
 Bourguès_k_prior_posterior_global <- Bourguès_k_prior %>% 
   prior_posterior_draws(
     posterior_samples = Bourguès_k_samples,
-    parameters = c("log_k_mu", "log_k_sigma", "sigma"),
+    parameters = c("log_k_mu", "log_k_sigma", 
+                   "log_sigma_mu", "log_sigma_sigma"),
     format = "short"
   ) %>% 
   mutate(
-    k = rnorm( n() , log_k_mu , log_k_sigma ) %>% exp()
+    k = rnorm( n() , log_k_mu , log_k_sigma ) %>% exp(),
+    sigma = rnorm( n() , log_sigma_mu , log_sigma_sigma ) %>% exp()
   ) %>%
   select(!ends_with("_mu") & !ends_with("_sigma")) %T>%
   print()
@@ -5153,11 +5162,14 @@ Bourguès_k_prior_posterior_treatment <- Bourguès_k_prior %>%
       filter(reference == "Bourguès et al. 1996") %>%
       droplevels() %>%
       select(treatment),
-    parameters = c("log_k[treatment]", "sigma"),
+    parameters = c("log_k[treatment]", "log_sigma[treatment]"),
     format = "short"
   ) %>% 
   mutate(
-    k = exp( log_k )
+    across(
+      starts_with("log"), ~ exp(.x), 
+      .names = "{sub('^log_', '', .col)}"
+    )
   ) %>%
   filter(treatment == "Spring" & distribution == "prior" |
            distribution == "posterior") %>%
@@ -5166,7 +5178,7 @@ Bourguès_k_prior_posterior_treatment <- Bourguès_k_prior %>%
       distribution == "prior", "Prior", treatment
     ) %>% fct()
   ) %>%
-  select(-c(distribution, log_k)) %T>%
+  select(-c(distribution, starts_with("log"))) %T>%
   print()
 
 Bourguès_k_prior_posterior <- Bourguès_k_prior_posterior_treatment %>%
@@ -5310,10 +5322,11 @@ Bourguès_prediction %>%
 Bourguès_prediction %>%
   filter(treatment == "Spring") %>%
   ggplot() +
-    geom_line(aes(t, nu)) +
+    geom_line(aes(t, nu, colour = treatment)) +
     geom_ribbon(aes(t, ymin = nu.lower, ymax = nu.upper, 
-                    alpha = factor(.width))) +
+                    alpha = factor(.width), fill = treatment)) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    facet_grid(~ treatment) +
     theme_minimal()
 
 # Clean up
@@ -5395,11 +5408,11 @@ tibble(n = 1:1e3,
     theme(panel.grid = element_blank())
 
 tibble(n = 1:1e3,
-       log_k_mu = rnorm( 1e3 , log(0.001) , 0.5 ), # this is log k at depth = 0
-       log_k_sigma_s = rtnorm( 1e3 , 0 , 0.5 , 0 ),
-       log_k_sigma_r = rtnorm( 1e3 , 0 , 0.5 , 0 ),
-       beta_mu = rnorm( 1e3 , 0.1 , 0.05 ),
-       beta_sigma = rtnorm( 1e3 , 0 , 0.05 , 0 ),
+       log_k_mu = rnorm( 1e3 , log(0.12) , 1 ), 
+       log_k_sigma_s = rtnorm( 1e3 , 0 , 1 , 0 ),
+       log_k_sigma_r = rtnorm( 1e3 , 0 , 1 , 0 ),
+       beta_mu = rnorm( 1e3 , 0 , 0.1 ),
+       beta_sigma = rtnorm( 1e3 , 0 , 0.1 , 0 ),
        beta = rnorm( 1e3 , beta_mu , beta_sigma ),
        k = exp(
          rnorm( 1e3 , log_k_mu , log_k_sigma_s ) + 
@@ -5424,6 +5437,12 @@ tibble(n = 1:1e3,
     facet_wrap(~parameter, scale = "free", nrow = 1) +
     theme_minimal() +
     theme(panel.grid = element_blank())
+# This is not a reasonable prior given prior simulation
+# and knowledge of detrital photosynthesis and since this
+# is log_k at depth = 0 m. However, I want the prior
+# difference between k and tau to be zero so I can assess 
+# the posterior difference as an unbiased indicator of 
+# k overestimating tau.
 
 # 6.5.3 Stan model ####
 Frontier2021_model <- here("Stan", "Frontier2021.stan") %>% 
@@ -5493,7 +5512,7 @@ Frontier2021_k_samples$summary() %>%
   summarise(rhat_1.001 = mean( rhat > 1.001 ),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No of rhat above 1.001. rhat = 1.00 ± 0.0000819.
+# No of rhat above 1.001. rhat = 1.00 ± 0.000123.
 
 # Chains
 Frontier2021_chains <- Frontier2021_samples$draws(format = "df") %>%
@@ -6435,10 +6454,10 @@ tibble(n = 1:1e3,
     theme(panel.grid = element_blank())
 
 tibble(n = 1:1e3,
-       log_k_mu = rnorm( 1e3 , log(0.001) , 0.5 ), # this is log k at depth = 0
-       log_k_sigma_s = rtnorm( 1e3 , 0 , 0.5 , 0 ),
-       log_k_sigma_r = rtnorm( 1e3 , 0 , 0.5 , 0 ),
-       beta_mu = rnorm( 1e3 , 0.5 , 0.3 ),
+       log_k_mu = rnorm( 1e3 , log(0.12) , 1 ), # same rationale as before
+       log_k_sigma_s = rtnorm( 1e3 , 0 , 1 , 0 ),
+       log_k_sigma_r = rtnorm( 1e3 , 0 , 1 , 0 ),
+       beta_mu = rnorm( 1e3 , 0 , 0.3 ),
        beta_sigma = rtnorm( 1e3 , 0 , 0.3 , 0 ),
        beta = rnorm( 1e3 , beta_mu , beta_sigma ),
        k = exp(
@@ -6533,7 +6552,7 @@ Frontier2022_k_samples$summary() %>%
   summarise(rhat_1.001 = mean( rhat > 1.001 ),
             rhat_mean = mean(rhat),
             rhat_sd = sd(rhat))
-# No of rhat above 1.001. rhat = 1.00 ± 0.0000607.
+# No of rhat above 1.001. rhat = 1.00 ± 0.0000692.
 
 # Chains
 Frontier2022_chains <- Frontier2022_samples$draws(format = "df") %>%
@@ -7897,6 +7916,34 @@ Vandendriessche_prior_posterior <- Vandendriessche_prior %>%
   select(-c(distribution, starts_with("log"), starts_with("beta"))) %T>%
   print()
 
+# Macroalgal model species parameters
+Vandendriessche_prior_posterior_species <- Vandendriessche_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Vandendriessche_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
+      droplevels() %>%
+      select(species),
+    parameters = c("log_alpha_s[species]", "log_mu_s[species]", 
+                   "log_tau_s[species]", "epsilon", "lambda", "theta"),
+    format = "short"
+  ) %>%
+  mutate( # Predict for species averaged over treatments
+    across(
+      starts_with("log"), 
+      ~ exp(.x), .names = "{gsub('^log_|_s$', '', .col)}"
+    ),
+  ) %>%
+  filter(species == "Fucus vesiculosus" & distribution == "prior" |
+           distribution == "posterior") %>%
+  mutate(
+    species = if_else(
+      distribution == "prior", "Prior", species
+    ) %>% fct()
+  ) %>%
+  select(-c(distribution, starts_with("log"))) %T>%
+  print()
+
 # Macroalgal model temperature and grazing effect parameters
 Vandendriessche_prior_posterior_beta <- Vandendriessche_prior %>% 
   prior_posterior_draws(
@@ -8045,6 +8092,28 @@ Vandendriessche_k_prior_posterior <- Vandendriessche_k_prior %>%
   select(-c(distribution, starts_with("log"), starts_with("beta"))) %T>%
   print()
 
+# Conventional model species parameters
+Vandendriessche_k_prior_posterior_species <- Vandendriessche_k_prior %>% 
+  prior_posterior_draws(
+    posterior_samples = Vandendriessche_k_samples,
+    group = data %>%
+      filter(reference == "Vandendriessche et al. 2007") %>%
+      droplevels() %>%
+      select(species),
+    parameters = c("log_k_s[species]", "sigma"),
+    format = "short"
+  ) %>%
+  mutate(k = exp( log_k_s )) %>%
+  filter(species == "Fucus vesiculosus" & distribution == "prior" |
+           distribution == "posterior") %>%
+  mutate(
+    species = if_else(
+      distribution == "prior", "Prior", species
+    ) %>% fct()
+  ) %>%
+  select(-c(distribution, starts_with("log"))) %T>%
+  print()
+
 # Conventional model temperature and grazing effect parameters
 Vandendriessche_k_prior_posterior_beta <- Vandendriessche_k_prior %>% 
   prior_posterior_draws(
@@ -8146,6 +8215,8 @@ Vandendriessche_k_prior_posterior_replicate <- data %>% # Get nesting from data
 # Save parameter distributions
 Vandendriessche_prior_posterior %>%
   write_rds(here("RDS", "Vandendriessche_prior_posterior.rds"))
+Vandendriessche_prior_posterior_species %>%
+  write_rds(here("RDS", "Vandendriessche_prior_posterior_species.rds"))
 Vandendriessche_prior_posterior_beta %>%
   write_rds(here("RDS", "Vandendriessche_prior_posterior_beta.rds"))
 Vandendriessche_prior_posterior_replicate %>%
@@ -8153,6 +8224,8 @@ Vandendriessche_prior_posterior_replicate %>%
 
 Vandendriessche_k_prior_posterior %>%
   write_rds(here("RDS", "Vandendriessche_k_prior_posterior.rds"))
+Vandendriessche_k_prior_posterior_species %>%
+  write_rds(here("RDS", "Vandendriessche_k_prior_posterior_species.rds"))
 Vandendriessche_k_prior_posterior_beta %>%
   write_rds(here("RDS", "Vandendriessche_k_prior_posterior_beta.rds"))
 Vandendriessche_k_prior_posterior_replicate %>%
@@ -8519,408 +8592,720 @@ Vandendriessche_prediction %>%
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
     mytheme
 
+# Clean up
+rm( list = ls( pattern = "Vandendriessche" ) )
+gc()
+
 # 7. Tables ####
 # 7.1 Table 1 ####
+# 7.1.1 Load data ####
+# Example 1
+Brouwer_prior_posterior <- here("RDS", "Brouwer_prior_posterior.rds") %>%
+  read_rds()
+Brouwer_k_prior_posterior <- here("RDS", "Brouwer_k_prior_posterior.rds") %>%
+  read_rds()
 
-# 7.2 Table S1 ####
+# Example 2
+Hamersley_prior_posterior <- here("RDS", "Hamersley_prior_posterior.rds") %>%
+  read_rds()
+Hamersley_k_prior_posterior <- here("RDS", "Hamersley_k_prior_posterior.rds") %>%
+  read_rds()
 
-# 7.3 Table S2 ####
+# Example 3
+Bettignies_prior_posterior <- here("RDS", "Bettignies_prior_posterior.rds") %>%
+  read_rds()
+Bettignies_k_prior_posterior <- here("RDS", "Bettignies_k_prior_posterior.rds") %>%
+  read_rds()
 
-# 7.4 Table S3 ####
+# Example 4
+Bourguès_prior_posterior <- here("RDS", "Bourguès_prior_posterior.rds") %>%
+  read_rds()
+Bourguès_k_prior_posterior <- here("RDS", "Bourguès_k_prior_posterior.rds") %>%
+  read_rds()
 
-# 7.5 Table S4 ####
+# Example 5
+Frontier2021_prior_posterior <- here("RDS", "Frontier2021_prior_posterior.rds") %>%
+  read_rds()
+Frontier2021_k_prior_posterior <- here("RDS", "Frontier2021_k_prior_posterior.rds") %>%
+  read_rds()
 
+# Example 6
+Frontier2022_prior_posterior <- here("RDS", "Frontier2022_prior_posterior.rds") %>%
+  read_rds()
+Frontier2022_k_prior_posterior <- here("RDS", "Frontier2022_k_prior_posterior.rds") %>%
+  read_rds()
+
+# Example 7
+Vandendriessche_prior_posterior <- here("RDS", "Vandendriessche_prior_posterior.rds") %>%
+  read_rds()
+Vandendriessche_k_prior_posterior <- here("RDS", "Vandendriessche_k_prior_posterior.rds") %>%
+  read_rds()
+
+# 7.1.2 Merge an calculate tau - k ####
+# Example 1
 Brouwer_parameters <- Brouwer_prior_posterior %>%
-  group_by(treatment) %>%
-  summarise(alpha_mean = mean(alpha),
-            alpha_sd = sd(alpha),
-            mu_mean = mean(mu),
-            mu_sd = sd(mu),
-            tau_mean = mean(tau),
-            tau_sd = sd(tau),
-            epsilon_mean = mean(epsilon),
-            epsilon_sd = sd(epsilon),
-            lambda_mean = mean(lambda),
-            lambda_sd = sd(lambda),
-            theta_mean = mean(theta),
-            theta_sd = sd(theta),
-            n = n()) %>%
-  ungroup()
+  full_join(Brouwer_k_prior_posterior) %>%
+  mutate(diff = tau - k,
+         ratio = tau / k) %T>%
+  print()
 
-# 4.2 Hamersley et al. 2015 ####
+# Example 2
 Hamersley_parameters <- Hamersley_prior_posterior %>%
-  group_by(treatment) %>%
-  summarise(alpha_mean = mean(alpha),
-            alpha_sd = sd(alpha),
-            mu_mean = mean(mu),
-            mu_sd = sd(mu),
-            tau_mean = mean(tau),
-            tau_sd = sd(tau),
-            epsilon_mean = mean(epsilon),
-            epsilon_sd = sd(epsilon),
-            lambda_mean = mean(lambda),
-            lambda_sd = sd(lambda),
-            theta_mean = mean(theta),
-            theta_sd = sd(theta),
-            n = n()) %>%
-  ungroup()
+  full_join(Hamersley_k_prior_posterior) %>%
+  mutate(diff = tau - k,
+         ratio = tau / k) %T>%
+  print()
 
-# 4.3 de Bettignies et al. 2020 ####
+# Example 3
 Bettignies_parameters <- Bettignies_prior_posterior %>%
-  group_by(treatment) %>%
-  summarise(alpha_mean = mean(alpha),
-            alpha_sd = sd(alpha),
-            mu_mean = mean(mu),
-            mu_sd = sd(mu),
-            tau_mean = mean(tau),
-            tau_sd = sd(tau),
-            epsilon_mean = mean(epsilon),
-            epsilon_sd = sd(epsilon),
-            lambda_mean = mean(lambda),
-            lambda_sd = sd(lambda),
-            theta_mean = mean(theta),
-            theta_sd = sd(theta),
-            n = n()) %>%
-  ungroup()
+  full_join(Bettignies_k_prior_posterior) %>%
+  mutate(diff = tau - k,
+         ratio = tau / k) %T>%
+  print()
 
-# 4.4 Frontier et al. 2021 ####
-Frontier2021_parameters <- Frontier2021_prior_posterior %>%
-  group_by(species, treatment) %>%
-  summarise(alpha_mean = mean(alpha),
-            alpha_sd = sd(alpha),
-            mu_mean = mean(mu),
-            mu_sd = sd(mu),
-            tau_mean = mean(tau),
-            tau_sd = sd(tau),
-            epsilon_mean = mean(epsilon),
-            epsilon_sd = sd(epsilon),
-            lambda_mean = mean(lambda),
-            lambda_sd = sd(lambda),
-            theta_mean = mean(theta),
-            theta_sd = sd(theta),
-            n = n()) %>%
-  ungroup()
-
-# 4.5 Frontier et al. 2022 ####
-Frontier2022_parameters <- Frontier2022_prior_posterior %>%
-  group_by(species, treatment) %>%
-  summarise(alpha_mean = mean(alpha),
-            alpha_sd = sd(alpha),
-            mu_mean = mean(mu),
-            mu_sd = sd(mu),
-            tau_mean = mean(tau),
-            tau_sd = sd(tau),
-            epsilon_mean = mean(epsilon),
-            epsilon_sd = sd(epsilon),
-            lambda_mean = mean(lambda),
-            lambda_sd = sd(lambda),
-            theta_mean = mean(theta),
-            theta_sd = sd(theta),
-            n = n()) %>%
-  ungroup()
-
-# 4.6 Vandendriessche et al. 2007 ####
-Frontier2021_parameters <- Frontier2021_prior_posterior %>%
-  group_by(species, treatment) %>%
-  summarise(alpha_mean = mean(alpha),
-            alpha_sd = sd(alpha),
-            mu_mean = mean(mu),
-            mu_sd = sd(mu),
-            tau_mean = mean(tau),
-            tau_sd = sd(tau),
-            epsilon_mean = mean(epsilon),
-            epsilon_sd = sd(epsilon),
-            lambda_mean = mean(lambda),
-            lambda_sd = sd(lambda),
-            theta_mean = mean(theta),
-            theta_sd = sd(theta),
-            n = n()) %>%
-  ungroup()
-
-# 4.7 Bourguès et al. 1996 ####
+# Example 4
 Bourguès_parameters <- Bourguès_prior_posterior %>%
-  group_by(treatment) %>%
-  summarise(alpha_mean = mean(alpha),
-            alpha_sd = sd(alpha),
-            mu_mean = mean(mu),
-            mu_sd = sd(mu),
-            tau_mean = mean(tau),
-            tau_sd = sd(tau),
-            epsilon_mean = mean(epsilon),
-            epsilon_sd = sd(epsilon),
-            lambda_mean = mean(lambda),
-            lambda_sd = sd(lambda),
-            theta_mean = mean(theta),
-            theta_sd = sd(theta),
-            n = n()) %>%
-  ungroup()
+  full_join(Bourguès_k_prior_posterior) %>%
+  mutate(diff = tau - k,
+         ratio = tau / k) %T>%
+  print()
 
-# 4.7 Table 1 ####
+# Example 5
+Frontier2021_parameters <- Frontier2021_prior_posterior %>% select(-beta) %>%
+  full_join(Frontier2021_k_prior_posterior %>% select(-beta)) %>%
+  mutate(diff = tau - k,
+         ratio = tau / k) %T>%
+  print()
+
+# Example 6
+Frontier2022_parameters <- Frontier2022_prior_posterior %>% select(-beta) %>%
+  full_join(Frontier2022_k_prior_posterior %>% select(-beta)) %>%
+  mutate(diff = tau - k,
+         ratio = tau / k) %T>%
+  print()
+
+# Example 7
+Vandendriessche_parameters <- Vandendriessche_prior_posterior %>%
+  full_join(Vandendriessche_k_prior_posterior) %>%
+  mutate(diff = tau - k,
+         ratio = tau / k) %T>%
+  print()
+
+# 7.1.3 Summarise ####
 require(glue)
-Table_1 <- bind_rows(
-  Brouwer_parameters %>% 
-    filter(treatment != "Prior") %>%
-    left_join(
-      data %>% 
-        filter(reference == "Brouwer 1996") %>%
-        distinct(reference, species, treatment),
-      by = "treatment"
-    ),
-  Hamersley_parameters %>% 
-    filter(treatment != "Prior") %>%
-    left_join(
-      data %>% 
-        filter(reference == "Hamersley et al. 2015") %>%
-        distinct(reference, species, treatment),
-      by = "treatment"
-    ),
-  Bettignies_parameters %>% 
-    filter(treatment != "Prior") %>%
-    left_join(
-      data %>% 
-        filter(reference == "de Bettignies et al. 2020") %>%
-        distinct(reference, species, treatment),
-      by = "treatment"
-    ),
-  Frontier2021_parameters %>% 
-    filter(treatment != "Prior") %>%
-    left_join(
-      data %>% 
-        filter(reference == "Frontier et al. 2021") %>%
-        distinct(reference, species, treatment),
-      by = c("species", "treatment")
-    ),
-  Frontier2022_parameters %>% 
-    filter(treatment != "Prior") %>%
-    left_join(
-      data %>% 
-        filter(reference == "Frontier et al. 2022") %>%
-        distinct(reference, species, treatment),
-      by = c("species", "treatment")
-    ),
-  Bourguès_parameters %>% 
-    filter(treatment != "Prior") %>%
-    left_join(
-      data %>% 
-        filter(reference == "Bourguès et al. 1996") %>%
-        distinct(reference, species, treatment),
-      by = "treatment"
-    )
-) %>%
-  mutate( # here I am converting alpha and tau to % for readability
-    alpha = glue("{signif(alpha_mean*100, 2)} ± {signif(alpha_sd*100, 2)}"),
-    mu = glue("{if_else(mu_mean < 100, signif(mu_mean, 2), signif(mu_mean, 3))}
-              ± {if_else(mu_sd < 100, signif(mu_sd, 2), signif(mu_sd, 3))}"),
-    tau = glue("{signif(tau_mean*100, 2)} ± {signif(tau_sd*100, 2)}"),
-    across(c(alpha, tau), ~str_replace_all(., "-", "−")) # replace hyphen with minus
+data_mean_sd %>% distinct(reference, species)
+data %>% distinct(reference, species)
+
+Table_1 <- bind_rows( # Combine into one tibble
+  Brouwer = Brouwer_parameters %>% 
+    mutate(species = "Desmarestia anceps" %>% fct()),
+  Hamersley = Hamersley_parameters %>% 
+    mutate(species = "Macrocystis pyrifera" %>% fct()),
+  Bettignies = Bettignies_parameters %>% 
+    select(-delta) %>%
+    mutate(species = "Laminaria hyperborea" %>% fct()),
+  Bourguès = Bourguès_parameters %>%
+    mutate(species = "Ulvaria obscura" %>% fct()),
+  Frontier2021 = Frontier2021_parameters %>%
+    mutate(treatment = treatment %>% fct()),
+  Frontier2022 = Frontier2022_parameters %>%
+    mutate(treatment = treatment %>% fct()),
+  Vandendriessche = Vandendriessche_parameters %>%
+    unite(col = "treatment", temperature, grazing, sep = " ") %>%
+    mutate(treatment = treatment %>% fct()),
+  .id = "reference"
+) %>% # I am converting k, alpha, tau and tau - k to % for readability
+  mutate(t0.5 = log(2)/k, # Calculate half-life beforehand
+         k = k * 100, 
+         alpha = alpha * 100,
+         tau = tau * 100,
+         diff = diff * 100,
+         log_ratio = log10(ratio)) %>% # log ratio is more symmetric
+  group_by(reference, species, treatment) %>%
+  summarise(
+    across(
+      everything(), 
+      list(
+        mean = mean, 
+        sd = sd, 
+        median = median
+      )
+    ), # This is the probability of tau > k
+    P = mean( diff > 0 ), # same as ratio > 1 and log_ratio > 0
+    n = n()
   ) %>%
-  select(reference, species, treatment, alpha, mu, tau)
-  
+  ungroup() %>%
+  mutate(
+    across(
+      c(starts_with("t0.5"), starts_with("k"), starts_with("alpha"), 
+        starts_with("mu"), starts_with("tau"), starts_with("diff"), 
+        starts_with("ratio"), starts_with("log_ratio"), P),
+      ~if_else(.x < 100, signif(.x, 2), signif(.x, 3))
+    ),
+    t0.5 = glue("{t0.5_mean} ± {t0.5_sd} ({t0.5_median})"),
+    k = glue("{k_mean} ± {k_sd} ({k_median})"),
+    alpha = glue("{alpha_mean} ± {alpha_sd} ({alpha_median})"),
+    mu = glue("{mu_mean} ± {mu_sd} ({mu_median})"),
+    tau = glue("{tau_mean} ± {tau_sd} ({tau_median})"),
+    diff = glue("{diff_mean} ± {diff_sd} ({diff_median})"),
+    ratio = glue("{ratio_mean} ± {ratio_sd} ({ratio_median})"),
+    log_ratio = glue("{log_ratio_mean} ± {log_ratio_sd} ({log_ratio_median})")
+  ) %>%
+  select(!(contains("mean") | contains("sd") | contains("median"))) %T>%
+  print()
+
+# 7.1.4 Save ####
+# Save fill Table 1 as csv
 Table_1 %>%
   write_csv(here("Tables", "Table_1.csv"))
 
+# Save reduced Table 1 as docx
 require(officer)
 read_docx() %>%
-  body_add_table(value = Table_1) %>%
+  body_add_table(
+    value = Table_1 %>%
+      filter(!species %in% c("Prior", "Global") &
+               !treatment %in% c("Prior", "Global")) %>%
+      select(-c(n, t0.5, diff, ratio)) %>%
+      mutate(reference = reference %>% 
+               fct_relevel("Brouwer", "Hamersley", "Bettignies", "Bourguès")) %>%
+      arrange(reference)
+  ) %>%
   print(target = here("Tables", "Table_1.docx"))
 
-# 4.8 Text ####
-Brouwer_prior_posterior %>%
+# 7.2 Table S1 ####
+# 7.2.1 Load data ####
+param_rhat_ess <- here("Tables", "Diagnostic", "param_rhat_ess.csv") %>%
+  read_csv() %>%
+  mutate(model = model %>% fct_relevel("relative", "constant")) %>%
+  arrange(reference, model) %T>%
+  print()
+
+param_loo <- here("Tables", "Diagnostic", "param_loo.csv") %>%
+  read_csv() %>%
+  mutate(model = model %>% fct_relevel("relative", "constant")) %T>%
+  print()
+
+# 7.2.2 Combine, round, summarise ####
+Table_S1 <- param_rhat_ess %>%
+  full_join(param_loo) %>%
+  select(-contains("looic")) %>% # LOOIC is simply -2 * ELPD
+  mutate(
+    rhat_mean = rhat_mean %>% signif(3),
+    across(
+      c(rhat_sd, starts_with("ess"), 
+        ends_with("diff"), ends_with("loo")),
+      ~case_when(
+        .x < 100 ~ signif(.x, 2),
+        .x < 1e3 ~ signif(.x, 3),
+        .x < 1e4 ~ signif(.x, 4),
+        T ~ signif(.x, 5)
+      )
+    ),
+    rhat = glue("{rhat_mean} ± {rhat_sd}"),
+    ess = glue("{ess_mean} ± {ess_sd}"),
+    elpd = glue("{elpd_loo} ± {se_elpd_loo}"),
+    diff = glue("{elpd_diff} ± {se_diff}"),
+    p = glue("{p_loo} ± {se_p_loo}")
+  ) %>%
+  select(reference, model, rhat, ess, elpd, diff, p) %T>%
+  print()
+  
+# 7.2.3 Save ####
+Table_S1 %>%
+  write_csv(here("Tables", "Table_S1.csv"))
+
+read_docx() %>%
+  body_add_table(value = Table_S1) %>%
+  print(target = here("Tables", "Table_S1.docx"))
+
+# 7.3 Table S2 ####
+# 7.3.1 Load data ####
+lik_rhat_ess <- here("Tables", "Diagnostic", "lik_rhat_ess.csv") %>%
+  read_csv() %>% 
+  mutate(model = model %>% fct_relevel("betaprime", "gamma", "lognormal")) %>%
+  arrange(reference, model) %T>%
+  print()
+
+lik_loo <- here("Tables", "Diagnostic", "lik_loo.csv") %>%
+  read_csv() %>%
+  mutate(model = model %>% fct_relevel("betaprime", "gamma", "lognormal")) %T>%
+  print()
+
+# 7.3.2 Combine, round, summarise ####
+Table_S2 <- lik_rhat_ess %>%
+  full_join(lik_loo) %>%
+  select(-contains("looic")) %>%
+  mutate(
+    rhat_mean = rhat_mean %>% signif(3),
+    across(
+      c(rhat_sd, starts_with("ess"), 
+        ends_with("diff"), ends_with("loo")),
+      ~case_when(
+        .x < 100 ~ signif(.x, 2),
+        .x < 1e3 ~ signif(.x, 3),
+        .x < 1e4 ~ signif(.x, 4),
+        T ~ signif(.x, 5)
+      )
+    ),
+    rhat = glue("{rhat_mean} ± {rhat_sd}"),
+    ess = glue("{ess_mean} ± {ess_sd}"),
+    elpd = glue("{elpd_loo} ± {se_elpd_loo}"),
+    diff = glue("{elpd_diff} ± {se_diff}"),
+    p = glue("{p_loo} ± {se_p_loo}")
+  ) %>%
+  select(reference, model, rhat, ess, elpd, diff, p) %T>%
+  print()
+
+# 7.3.3 Save ####
+Table_S2 %>%
+  write_csv(here("Tables", "Table_S2.csv"))
+
+read_docx() %>%
+  body_add_table(value = Table_S2) %>%
+  print(target = here("Tables", "Table_S2.docx"))
+
+# 7.4 Table S3 ####
+# 7.4.1 Load data ####
+het_rhat_ess <- here("Tables", "Diagnostic", "het_rhat_ess.csv") %>%
+  read_csv() %>% 
+  separate(model, into = c("likelihood", "variance"), sep = " ") %>%
+  mutate(likelihood = likelihood %>% fct_relevel("betaprime"),
+         variance = variance %>% fct_relevel("heteroskedastic")) %>%
+  arrange(reference, likelihood, variance) %T>%
+  print()
+
+het_loo <- here("Tables", "Diagnostic", "het_loo.csv") %>%
+  read_csv() %>% 
+  separate(model, into = c("likelihood", "variance"), sep = "_") %>%
+  mutate(likelihood = likelihood %>% fct_relevel("betaprime"),
+         variance = variance %>% fct_relevel("heteroskedastic")) %T>%
+  print()
+
+# 7.4.2 Combine, round, summarise ####
+Table_S3 <- het_rhat_ess %>%
+  full_join(het_loo) %>%
+  select(-contains("looic")) %>%
+  mutate(
+    rhat_mean = rhat_mean %>% signif(3),
+    across(
+      c(rhat_sd, starts_with("ess"), 
+        ends_with("diff"), ends_with("loo")),
+      ~case_when(
+        .x < 100 ~ signif(.x, 2),
+        .x < 1e3 ~ signif(.x, 3),
+        .x < 1e4 ~ signif(.x, 4),
+        T ~ signif(.x, 5)
+      )
+    ),
+    rhat = glue("{rhat_mean} ± {rhat_sd}"),
+    ess = glue("{ess_mean} ± {ess_sd}"),
+    elpd = glue("{elpd_loo} ± {se_elpd_loo}"),
+    diff = glue("{elpd_diff} ± {se_diff}"),
+    p = glue("{p_loo} ± {se_p_loo}")
+  ) %>%
+  select(reference, likelihood, variance, 
+         rhat, ess, elpd, diff, p) %T>%
+  print()
+
+# 7.4.3 Save ####
+Table_S3 %>%
+  write_csv(here("Tables", "Table_S3.csv"))
+
+read_docx() %>%
+  body_add_table(value = Table_S3) %>%
+  print(target = here("Tables", "Table_S3.docx"))
+
+# 7.5 Table S4 ####
+# 7.5.1 Load data ####
+conv_rhat_ess <- here("Tables", "Diagnostic", "conv_rhat_ess.csv") %>%
+  read_csv() %T>%
+  print()
+
+conv_loo <- here("Tables", "Diagnostic", "conv_loo.csv") %>%
+  read_csv() %T>%
+  print()
+
+# 7.5.2 Combine, round, summarise ####
+Table_S4 <- conv_rhat_ess %>%
+  full_join(conv_loo) %>%
+  select(-contains("looic")) %>%
+  mutate(
+    rhat_mean = rhat_mean %>% signif(3),
+    across(
+      c(rhat_sd, starts_with("ess"), 
+        ends_with("diff"), ends_with("loo")),
+      ~case_when(
+        .x < 100 ~ signif(.x, 2),
+        .x < 1e3 ~ signif(.x, 3),
+        .x < 1e4 ~ signif(.x, 4),
+        T ~ signif(.x, 5)
+      )
+    ),
+    rhat = glue("{rhat_mean} ± {rhat_sd}"),
+    ess = glue("{ess_mean} ± {ess_sd}"),
+    elpd = glue("{elpd_loo} ± {se_elpd_loo}"),
+    diff = glue("{elpd_diff} ± {se_diff}"),
+    p = glue("{p_loo} ± {se_p_loo}")
+  ) %>%
+  select(reference, model, rhat, ess, elpd, diff, p) %T>%
+  print()
+
+# 7.5.3 Save ####
+Table_S4 %>%
+  write_csv(here("Tables", "Table_S4.csv"))
+
+read_docx() %>%
+  body_add_table(value = Table_S4) %>%
+  print(target = here("Tables", "Table_S4.docx"))
+
+# 7.6 Effects for text ####
+# 7.6.1 P(alpha > 0) ####
+# Alpha was allowed to take negative values in the first 
+# three examples, so it is interesting to know the
+# probability of initial detrital growth P(alpha > 0).
+
+P_alpha <- bind_rows(
+  Brouwer = Brouwer_prior_posterior,
+  Hamersley = Hamersley_prior_posterior,
+  Bettignies = Bettignies_prior_posterior %>% select(-delta),
+  .id = "reference"
+)  %>%
+  group_by(reference, treatment) %>%
+  summarise(
+    P_more = mean( alpha > 0 ) %>% signif(2),
+    P_less = mean( alpha < 0 ) %>% signif(2),
+    n = n()
+  ) %>%
+  ungroup() %T>%
+  print()
+  
+P_alpha %>%
+  write_csv(here("Tables", "P_alpha.csv"))
+
+read_docx() %>%
+  body_add_table(value = P_alpha) %>%
+  print(target = here("Tables", "P_alpha.docx"))
+
+# 7.6.2 Effect parameters ####
+# The last three examples were effect coded. In examples
+# 5 and 6 mu is coded to change continuously with depth
+# and in example 7 mu and tau are coded to change
+# with temperature and grazing.
+
+# Load data
+Frontier2021_prior_posterior_beta <- 
+  here("RDS", "Frontier2021_prior_posterior_beta.rds") %>%
+  read_rds()
+
+Frontier2022_prior_posterior_beta <- 
+  here("RDS", "Frontier2022_prior_posterior_beta.rds") %>%
+  read_rds()
+
+Vandendriessche_prior_posterior_beta <- 
+  here("RDS", "Vandendriessche_prior_posterior_beta.rds") %>%
+  read_rds()
+
+# Depth effect
+depth_effect <- bind_rows(
+  Frontier2021 = Frontier2021_prior_posterior_beta,
+  Frontier2022 = Frontier2022_prior_posterior_beta,
+  .id = "reference"
+) %>%
+  mutate(
+    mu = exp(log_mu), # intercept (depth = 0)
+    ratio = exp(-beta) # multiplicative effect for increase in depth
+  ) %>%
+  group_by(reference, species) %>%
+  summarise(
+    across(
+      everything(), 
+      list(
+        mean = mean, 
+        sd = sd, 
+        median = median
+      )
+    ),
+    P = mean( beta > 0 ) %>% signif(2),
+    n = n()
+  ) %>%
+  ungroup() %>%
+  mutate(
+    across(
+      (contains("mean") | contains("sd") | contains("median")),
+      ~if_else(.x < 100, signif(.x, 2), signif(.x, 3))
+    ),
+    mu = glue("{mu_mean} ± {mu_sd} ({mu_median})"),
+    log_mu = glue("{log_mu_mean} ± {log_mu_sd} ({log_mu_median})"),
+    beta = glue("{beta_mean} ± {beta_sd} ({beta_median})"),
+    ratio = glue("{ratio_mean} ± {ratio_sd} ({ratio_median})")
+  ) %>%
+  select(!(contains("mean") | contains("sd") | contains("median"))) %T>%
+  print()
+
+depth_effect %>%
+  write_csv(here("Tables", "depth_effect.csv"))
+
+read_docx() %>%
+  body_add_table(value = depth_effect) %>%
+  print(target = here("Tables", "depth_effect.docx"))
+
+# Temperature and grazing effects
+temp_graz_effect <- Vandendriessche_prior_posterior_beta %>%
+  mutate(
+    mu_t_ratio = exp(log_mu_t), # multiplicative temp effects relative to baseline
+    tau_t_ratio = exp(log_tau_t),
+    mu_g_ratio = exp(beta_mu), # multiplicative grazing effect (grazed/control)
+    tau_g_ratio = exp(beta_tau)
+  ) %>%
+  group_by(temperature) %>% # grazing effect is temperature-dependent
+  summarise(
+    across(
+      everything(), 
+      list(
+        mean = mean, 
+        sd = sd, 
+        median = median
+      )
+    ),
+    P_mu = mean( beta_mu < 0 ) %>% signif(2),
+    P_tau = mean( beta_mu < 0 ) %>% signif(2),
+    n = n()
+  ) %>%
+  ungroup() %>%
+  mutate(
+    across(
+      (contains("mean") | contains("sd") | contains("median")),
+      ~if_else(.x < 100, signif(.x, 2), signif(.x, 3))
+    ),
+    mu_t_ratio = glue("{mu_t_ratio_mean} ± {mu_t_ratio_sd} ({mu_t_ratio_median})"),
+    tau_t_ratio = glue("{tau_t_ratio_mean} ± {tau_t_ratio_sd} ({tau_t_ratio_median})"),
+    mu_g_ratio = glue("{mu_g_ratio_mean} ± {mu_g_ratio_sd} ({mu_g_ratio_median})"),
+    tau_g_ratio = glue("{tau_g_ratio_mean} ± {tau_g_ratio_sd} ({tau_g_ratio_median})")
+  ) %>%
+  select(!(contains("mean") | contains("sd") | contains("median"))) %T>%
+  print()
+
+temp_graz_effect %>%
+  write_csv(here("Tables", "temp_graz_effect.csv"))
+
+read_docx() %>%
+  body_add_table(value = temp_graz_effect) %>%
+  print(target = here("Tables", "temp_graz_effect.docx"))
+
+# 7.6.3 Calculated contrasts ####
+# All examples include simple categorical contrasts.
+# Example 1
+Brouwer_contrast <- Brouwer_prior_posterior %>%
   filter(treatment != "Prior") %>%
   select(-c(epsilon, lambda, theta)) %>%
-  mutate(treatment = treatment %>% 
-           fct_recode("C" = "Control",
-                      "K" = "Pre-killed")) %>%
+  mutate( # Convert exponential rates to %
+    alpha = alpha * 100,
+    tau = tau * 100
+  ) %>%
+  pivot_longer(cols = c(alpha, mu, tau),
+               names_to = "parameter") %>%
   pivot_wider(names_from = treatment,
-              values_from = c(alpha, mu, tau)) %>%
-  mutate(delta_mu = mu_C - mu_K,
-         prop_mu = mu_K / mu_C) %>%
-  summarise(delta_mu_mean = mean(delta_mu),
-            delta_mu_sd = sd(delta_mu),
-            delta_mu_P = mean(delta_mu > 0),
-            prop_mu_mean = mean(prop_mu),
-            prop_mu_sd = sd(prop_mu),
-            alpha_C_P = mean(alpha_C > 0),
-            alpha_K_P = mean(alpha_K < 0))
+              values_from = value) %>%
+  mutate(contrast = "KilledvControl",
+         diff = `Pre-killed` - Control,
+         ratio = `Pre-killed` / Control) %>%
+  select(-c(`Pre-killed`, Control)) %T>%
+  print()
 
-Hamersley_prior_posterior %>%
-  filter(treatment != "Prior") %>%
+# Example 2
+Hamersley_contrast <- Hamersley_prior_posterior %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
   select(-c(epsilon, lambda, theta)) %>%
-  mutate(treatment = treatment %>% 
-           fct_recode("F" = "Fresh",
-                      "S" = "Senescent",
-                      "D" = "Detached")) %>%
+  mutate(alpha = alpha * 100,
+         tau = tau * 100) %>%
+  pivot_longer(cols = c(alpha, mu, tau),
+               names_to = "parameter") %>%
   pivot_wider(names_from = treatment,
-              values_from = c(alpha, mu, tau)) %T>%
-  {
-    summarise(., alpha_F_P = mean(alpha_F < 0),
-              alpha_S_P = mean(alpha_S < 0),
-              alpha_D_P = mean(alpha_D < 0)) %>%
-      print()
-  } %>%
-  mutate(delta_alpha_F_S = alpha_F - alpha_S,
-         delta_alpha_F_D = alpha_F - alpha_D,
-         delta_alpha_S_D = alpha_S - alpha_D,
-         delta_mu_F_S = mu_F - mu_S,
-         delta_mu_F_D = mu_F - mu_D,
-         delta_mu_S_D = mu_S - mu_D,
-         delta_tau_F_S = tau_F - tau_S,
-         delta_tau_F_D = tau_F - tau_D,
-         delta_tau_S_D = tau_S - tau_D) %>%
-  select(.chain, .iteration, .draw, starts_with("delta")) %>%
-  pivot_longer(cols = -c(.chain, .iteration, .draw),
-               names_to = "Contrast", values_to = "Difference", 
-               names_prefix = "delta_") %>%
-  group_by(Contrast) %>%
-  summarise(mean = mean(Difference),
-            sd = sd(Difference),
-            P = pmax( mean(Difference < 0), mean(Difference > 0) )) %>%
-  separate(Contrast, into = c("Parameter", "First", "Second"), sep = "_")
+              values_from = value) %>%
+  mutate(SvF_diff = Senescent - Fresh,
+         SvF_ratio = Senescent / Fresh,
+         DvF_diff = Detached - Fresh,
+         DvF_ratio = Detached / Fresh,
+         DvS_diff = Detached - Senescent,
+         DvS_ratio = Detached / Senescent) %>%
+  select(-c(Fresh, Senescent, Detached)) %>%
+  pivot_longer(cols = c(ends_with("diff"), ends_with("ratio"))) %>%
+  separate(name, into = c("contrast", "type"), sep = "_") %>%
+  pivot_wider(values_from = value,
+              names_from = type) %T>%
+  print()
 
-Bettignies_prior_posterior %>%
-  filter(treatment != "Prior") %>%
-  select(-c(epsilon, lambda, theta)) %>%
-  mutate(treatment = treatment %>% 
-           fct_recode("F" = "Fresh",
-                      "S" = "Senescent")) %>%
+# Example 3
+Bettignies_contrast <- Bettignies_prior_posterior %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  select(-c(epsilon, lambda, theta, delta)) %>%
+  mutate(alpha = alpha * 100,
+         tau = tau * 100) %>%
+  pivot_longer(cols = c(alpha, mu, tau),
+               names_to = "parameter") %>%
   pivot_wider(names_from = treatment,
-              values_from = c(alpha, mu, tau)) %T>%
-  {
-    summarise(., alpha_F_P = mean(alpha_F > 0),
-              alpha_S_P = mean(alpha_S < 0)) %>%
-      print()
-  } %>%
-  mutate(delta_alpha = alpha_F - alpha_S,
-         delta_mu = mu_F - mu_S,
-         delta_tau = tau_S - tau_F) %>%
-  select(.chain, .iteration, .draw, starts_with("delta")) %>%
-  pivot_longer(cols = -c(.chain, .iteration, .draw),
-               names_to = "Parameter", values_to = "Difference", 
-               names_prefix = "delta_") %>%
-  group_by(Parameter) %>%
-  summarise(mean = mean(Difference),
-            sd = sd(Difference),
-            P = pmax( mean(Difference < 0), mean(Difference > 0) ))
+              values_from = value) %>%
+  mutate(S1vF_diff = `Senescent Experiment 1` - Fresh,
+         S1vF_ratio = `Senescent Experiment 1` / Fresh,
+         S2vF_diff = `Senescent Experiment 2` - Fresh,
+         S2vF_ratio = `Senescent Experiment 2` / Fresh,
+         S2vS1_diff = `Senescent Experiment 2` - `Senescent Experiment 1`,
+         S2vS1_ratio = `Senescent Experiment 2` / `Senescent Experiment 1`) %>%
+  select(-c(Fresh, `Senescent Experiment 1`, `Senescent Experiment 2`)) %>%
+  pivot_longer(cols = c(ends_with("diff"), ends_with("ratio"))) %>%
+  separate(name, into = c("contrast", "type"), sep = "_") %>%
+  pivot_wider(values_from = value,
+              names_from = type) %T>%
+  print()
 
-Frontier2021_prior_posterior %>%
-  filter(treatment != "Prior") %>%
+# Example 4
+Bourguès_contrast <- Bourguès_prior_posterior %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
   select(-c(epsilon, lambda, theta)) %>%
-  mutate(species = species %>% 
-           fct_recode("H" = "Laminaria hyperborea",
-                      "O" = "Laminaria ochroleuca")) %>%
-  pivot_wider(names_from = c(species, treatment),
-              values_from = c(alpha, mu, tau)) %>%
-  mutate(delta_alpha = alpha_H_0m - alpha_O_0m,
-         delta_mu_0m = mu_H_0m - mu_O_0m,
-         delta_mu_15m = mu_H_15m - mu_O_15m,
-         delta_mu_30m = mu_H_30m - mu_O_30m,
-         delta_mu_H = mu_H_0m - mu_H_30m,
-         delta_mu_O = mu_O_0m - mu_O_30m,
-         delta_tau = tau_H_0m - tau_O_0m) %>%
-  select(.chain, .iteration, .draw, starts_with("delta")) %>%
-  pivot_longer(cols = -c(.chain, .iteration, .draw),
-               names_to = "Parameter", values_to = "Difference", 
-               names_prefix = "delta_") %>%
-  group_by(Parameter) %>%
-  summarise(mean = mean(Difference),
-            sd = sd(Difference),
-            P = pmax( mean(Difference < 0), mean(Difference > 0) ))
-
-Frontier2022_prior_posterior %>%
-  filter(treatment != "Prior") %>%
-  select(-c(epsilon, lambda, theta)) %>%
-  mutate(species = species %>% 
-           fct_recode("H" = "Laminaria hyperborea",
-                      "O" = "Laminaria ochroleuca")) %>%
-  pivot_wider(names_from = c(species, treatment),
-              values_from = c(alpha, mu, tau)) %>%
-  mutate(delta_alpha = alpha_H_0.5m - alpha_O_0.5m,
-         delta_mu_0.5m = mu_H_0.5m - mu_O_0.5m,
-         delta_mu_1.5m = mu_H_1.5m - mu_O_1.5m,
-         delta_mu_3m = mu_H_3m - mu_O_3m,
-         delta_mu_H = mu_H_0.5m - mu_H_3m,
-         delta_mu_O = mu_O_0.5m - mu_O_3m) %>%
-  select(.chain, .iteration, .draw, starts_with("delta")) %>%
-  pivot_longer(cols = -c(.chain, .iteration, .draw),
-               names_to = "Parameter", values_to = "Difference", 
-               names_prefix = "delta_") %>%
-  group_by(Parameter) %>%
-  summarise(mean = mean(Difference),
-            sd = sd(Difference),
-            P = pmax( mean(Difference < 0), mean(Difference > 0) ))
-
-Bourguès_prior_posterior %>%
-  filter(treatment != "Prior") %>%
-  select(-c(epsilon, lambda, theta)) %>%
-  mutate(treatment = treatment %>% 
-           fct_recode("Sp" = "Spring",
-                      "Su" = "Summer",
-                      "A" = "Autumn",
-                      "W" = "Winter")) %>%
+  mutate(alpha = alpha * 100,
+         tau = tau * 100) %>%
+  pivot_longer(cols = c(alpha, mu, tau),
+               names_to = "parameter") %>%
   pivot_wider(names_from = treatment,
-              values_from = c(alpha, mu, tau)) %>%
-  mutate(delta_alpha_Sp_Su = alpha_Sp - alpha_Su,
-         delta_alpha_Sp_A = alpha_Sp - alpha_A,
-         delta_alpha_Sp_W = alpha_Sp - alpha_W,
-         delta_alpha_Su_A = alpha_Su - alpha_A,
-         delta_alpha_Su_W = alpha_Su - alpha_W,
-         delta_alpha_A_W = alpha_A - alpha_W,
-         delta_mu_Sp_Su = mu_Sp - mu_Su,
-         delta_mu_Sp_A = mu_Sp - mu_A,
-         delta_mu_Sp_W = mu_Sp - mu_W,
-         delta_mu_Su_A = mu_Su - mu_A,
-         delta_mu_Su_W = mu_Su - mu_W,
-         delta_mu_A_W = mu_A - mu_W,
-         delta_tau_Sp_Su = tau_Sp - tau_Su,
-         delta_tau_Sp_A = tau_Sp - tau_A,
-         delta_tau_Sp_W = tau_Sp - tau_W,
-         delta_tau_Su_A = tau_Su - tau_A,
-         delta_tau_Su_W = tau_Su - tau_W,
-         delta_tau_A_W = tau_A - tau_W) %>%
-  select(.chain, .iteration, .draw, starts_with("delta")) %>%
-  pivot_longer(cols = -c(.chain, .iteration, .draw),
-               names_to = "Contrast", values_to = "Difference", 
-               names_prefix = "delta_") %>%
-  group_by(Contrast) %>%
-  summarise(mean = mean(Difference),
-            sd = sd(Difference),
-            P = pmax( mean(Difference < 0), mean(Difference > 0) )) %>%
-  separate(Contrast, into = c("Parameter", "First", "Second"), sep = "_")
+              values_from = value) %>%
+  mutate(SuvSp_diff = Summer - Spring,
+         SuvSp_ratio = Summer / Spring,
+         AuvSp_diff = Autumn - Spring,
+         AuvSp_ratio = Autumn / Spring,
+         WivSp_diff = Winter - Spring,
+         WivSp_ratio = Winter / Spring,
+         AuvSu_diff = Autumn - Summer,
+         AuvSu_ratio = Autumn / Summer,
+         WivSu_diff = Winter - Summer,
+         WivSu_ratio = Winter / Summer,
+         WivAu_diff = Winter - Autumn,
+         WivAu_ratio = Winter / Autumn) %>%
+  select(-c(Spring, Summer, Autumn, Winter)) %>%
+  pivot_longer(cols = c(ends_with("diff"), ends_with("ratio"))) %>%
+  separate(name, into = c("contrast", "type"), sep = "_") %>%
+  pivot_wider(values_from = value,
+              names_from = type) %T>%
+  print()
+
+# Example 5
+Frontier2021_contrast <- Frontier2021_prior_posterior %>%
+  # Filter for a single treatment since treatment only affects mu via beta
+  filter(!species %in% c("Prior", "Global") & treatment == "0m") %>%
+  select(-c(epsilon, lambda, theta, treatment)) %>%
+  mutate(alpha = alpha * 100,
+         tau = tau * 100) %>%
+  pivot_longer(cols = c(alpha, mu, tau, beta),
+               names_to = "parameter") %>%
+  pivot_wider(names_from = species,
+              values_from = value) %>%
+  mutate(contrast = "OvH",
+         diff = `Laminaria ochroleuca` - `Laminaria hyperborea`,
+         ratio = `Laminaria ochroleuca` / `Laminaria hyperborea`) %>%
+  select(-c(`Laminaria ochroleuca`, `Laminaria hyperborea`)) %T>%
+  print()
+
+# Example 6
+Frontier2022_contrast <- Frontier2022_prior_posterior %>%
+  filter(!species %in% c("Prior", "Global") & treatment == "0.5m") %>%
+  select(-c(epsilon, lambda, theta, treatment)) %>%
+  mutate(alpha = alpha * 100,
+         tau = tau * 100) %>%
+  pivot_longer(cols = c(alpha, mu, tau, beta),
+               names_to = "parameter") %>%
+  pivot_wider(names_from = species,
+              values_from = value) %>%
+  mutate(contrast = "OvH",
+         diff = `Laminaria ochroleuca` - `Laminaria hyperborea`,
+         ratio = `Laminaria ochroleuca` / `Laminaria hyperborea`) %>%
+  select(-c(`Laminaria ochroleuca`, `Laminaria hyperborea`)) %T>%
+  print()
+
+# Example 7
+Vandendriessche_prior_posterior_species <- 
+  here("RDS", "Vandendriessche_prior_posterior_species.rds") %>%
+  read_rds()
+
+Vandendriessche_contrast <- Vandendriessche_prior_posterior_species %>%
+  filter(species != "Prior") %>%
+  select(-c(epsilon, lambda, theta)) %>%
+  mutate(alpha = alpha * 100,
+         tau = tau * 100) %>%
+  pivot_longer(cols = c(alpha, mu, tau),
+               names_to = "parameter") %>%
+  pivot_wider(names_from = species,
+              values_from = value) %>%
+  mutate(contrast = "AvF",
+         diff = `Ascophyllum nodosum` - `Fucus vesiculosus`,
+         ratio = `Ascophyllum nodosum` / `Fucus vesiculosus`) %>%
+  select(-c(`Ascophyllum nodosum`, `Fucus vesiculosus`)) %T>%
+  print()
+
+# Combine and summarise
+contrast <- bind_rows(
+  Brouwer = Brouwer_contrast,
+  Hamersley = Hamersley_contrast,
+  Bettignies = Bettignies_contrast,
+  Bourguès = Bourguès_contrast,
+  Frontier2021 = Frontier2021_contrast,
+  Frontier2022 = Frontier2022_contrast,
+  Vandendriessche = Vandendriessche_contrast,
+  .id = "reference"
+) %>%
+  group_by(reference, parameter, contrast) %>%
+  summarise(
+    across(
+      c(diff, ratio), 
+      list(
+        mean = mean, 
+        sd = sd, 
+        median = median
+      )
+    ), # This is the probability of group 1 < group 2
+    P = mean( diff < 0 ), # same as ratio < 1
+    n = n()
+  ) %>%
+  ungroup() %>%
+  mutate(
+    across(
+      c(starts_with("diff"), starts_with("ratio"), P),
+      ~case_when(
+        .x < 100 ~ signif(.x, 2),
+        .x < 1e3 ~ signif(.x, 3),
+        .x < 1e4 ~ signif(.x, 4),
+        T ~ signif(.x, 5)
+      )
+    ),
+    diff = glue("{diff_mean} ± {diff_sd} ({diff_median})"),
+    ratio = glue("{ratio_mean} ± {ratio_sd} ({ratio_median})")
+  ) %>%
+  select(!(contains("mean") | contains("sd") | contains("median"))) %T>%
+  print(n = 50)
+
+contrast %>%
+  write_csv(here("Tables", "contrast.csv"))
+
+read_docx() %>%
+  body_add_table(value = contrast) %>%
+  print(target = here("Tables", "contrast.docx"))
 
 # 8. Figures ####
 # 8.1 Dead or alive ####
 # 8.1.1 Figure 2 ####
-Brouwer_prediction_summary_longer <- Brouwer_prediction_summary %>%
-  filter(treatment != "Prior") %>%
-  pivot_longer(cols = -c(t, treatment, .width, .point, .interval),
-               names_to = c("parameter", "name"),
-               names_sep = "\\.") %>%
-  replace_na(list(name = "median")) %>%
-  pivot_wider(names_from = name,
-              values_from = value) %T>%
-  print()
-# Can safely ignore warning, which just informs that NAs were 
-# produced before I replaced them with "median".
+# Load predictions
+Brouwer_prediction <- here("RDS", "Brouwer_prediction.rds") %>%
+  read_rds()
 
-Brouwer_prediction_summary_longer %>%
-  ggplot() +
-    geom_pointrange(data = data %>%
-                      filter(reference == "Brouwer 1996") %>%
-                      droplevels() %>% 
-                      distinct(t, p_mean, p_sd, treatment),
-                    aes(t, p_mean, colour = treatment,
-                      ymin = p_mean - p_sd,
-                      ymax = p_mean + p_sd)) +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
-                    alpha = factor(.width), fill = treatment)) +
-    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    facet_grid(rows = vars(parameter), scales = "free") +
-    theme_minimal()
-# Not quite what I imagined. Better proceed with separate plots
-# and combine using patchwork.
+# Predictions may be pivoted longer using:
+  # %>% 
+  # pivot_longer(cols = -c(t, treatment, .width, .point, .interval),
+  #              names_to = c("parameter", "name"),
+  #              names_sep = "\\.") %>%
+  # replace_na(list(name = "median")) %>%
+  # pivot_wider(names_from = name,
+  #             values_from = value)
 
-# Create theme
+# Update theme
 mytheme <- theme(
   plot.margin = margin(0.5, 0.25, 0, 0, unit = "cm"),
   panel.background = element_blank(),
@@ -8945,16 +9330,18 @@ mytheme <- theme(
   legend.key.spacing.y = unit(.05, "cm")
 )
 
-Fig_2_k <- Brouwer_prediction_summary_longer %>%
-  filter(parameter == "k") %>%
+# Plot components
+Fig_2_k <- Brouwer_prediction %>%
+  filter(treatment != "Prior") %>%
   ggplot() +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
+    geom_line(aes(t, k, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper,
                     alpha = factor(.width), fill = treatment)) +
     geom_density(data = Brouwer_prior_posterior %>%
                    filter(treatment != "Prior"),
-                 aes(x = mu, y = after_stat(density) * 0.2, fill = treatment),
-                 alpha = 0.8, colour = NA, position = position_nudge(y = -0.09)) +
+                 aes(x = mu, y = after_stat(density) * 0.4, fill = treatment),
+                 alpha = 0.8, colour = NA, position = position_nudge(y = -0.09),
+                 bw = 320*0.005) +
     scale_colour_manual(values = c("#81a512", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
@@ -8964,28 +9351,29 @@ Fig_2_k <- Brouwer_prediction_summary_longer %>%
     scale_y_continuous(breaks = seq(-0.09, 0, 0.03),
                        labels = scales::label_number(accuracy = c(rep(0.01, 3), 1),
                                                      style_negative = "minus")) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic("k")*" (d"^-1*")")) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic("k")*" (day"^-1*")")) +
     coord_cartesian(ylim = c(-0.09, 0),
                     expand = F, clip = "off") +
     mytheme +
     theme(legend.position = "none",
           axis.title.y = element_text(vjust = -1))
 
-Fig_2_mu <- Brouwer_prediction_summary_longer %>%
-  filter(parameter == "p_mu") %>%
+Fig_2_mu <- Brouwer_prediction %>%
+  filter(treatment != "Prior") %>%
   ggplot() +
     geom_hline(yintercept = 1) +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
+    geom_line(aes(t, m_mu, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
                     alpha = factor(.width), fill = treatment)) +
-    geom_pointrange(data = data %>%
+    geom_vline(xintercept = 0) + # fake y axis to make geom_pointrange visible at x = 0
+    geom_pointrange(data = data_mean_sd %>%
                       filter(reference == "Brouwer 1996") %>%
                       droplevels() %>% 
-                      distinct(t, p_mean, p_sd, treatment),
-                    aes(t, p_mean, colour = treatment,
-                        ymin = p_mean - p_sd,
-                        ymax = p_mean + p_sd),
+                      distinct(t, m_mean, m_sd, treatment),
+                    aes(t, m_mean, colour = treatment,
+                        ymin = m_mean - m_sd,
+                        ymax = m_mean + m_sd),
                     size = 0.2, shape = 16,
                     linewidth = 0.4) +
     scale_colour_manual(values = c("#81a512", "#5e5003")) +
@@ -8994,51 +9382,32 @@ Fig_2_mu <- Brouwer_prediction_summary_longer %>%
     scale_x_continuous(breaks = seq(0, 320, 80)) +
     scale_y_continuous(breaks = seq(0, 1.2, 0.4),
                        labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic("μ"["m"]))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
     coord_cartesian(xlim = c(0, 320), ylim = c(0, 1.2),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.x = element_blank(),
           axis.text.x = element_blank(),
-          axis.title.y = element_text(vjust = -.33),
-          legend.position = "none")
-
-Fig_2_nu <- Brouwer_prediction_summary_longer %>%
-  filter(parameter == "nu") %>%
-  ggplot() +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
-                    alpha = factor(.width), fill = treatment)) +
-    scale_colour_manual(values = c("#81a512", "#5e5003")) +
-    scale_fill_manual(values = c("#81a512", "#5e5003")) +
-    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 320, 80)) +
-    scale_y_continuous(breaks = seq(0, 1500, 500)) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic("ν"))) +
-    coord_cartesian(xlim = c(0, 320), ylim = c(0, 1500),
-                    expand = F, clip = "off") +
-    mytheme +
-    theme(axis.title.x = element_blank(),
-          axis.text.x = element_blank(),
           axis.title.y = element_text(vjust = 0),
+          axis.line.y = element_blank(),
           legend.position = "none")
 
-Fig_2_m <- Brouwer_prediction_summary_longer %>%
-  filter(parameter == "p") %>%
+Fig_2_m <- Brouwer_prediction %>%
+  filter(treatment != "Prior") %>%
   ggplot() +
     geom_hline(yintercept = 1) +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
+    geom_line(aes(t, m, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m.lower, ymax = m.upper,
                     alpha = factor(.width), fill = treatment)) +
-    geom_pointrange(data = data %>%
+    geom_vline(xintercept = 0) +
+    geom_pointrange(data = data_mean_sd %>%
                       filter(reference == "Brouwer 1996") %>%
                       droplevels() %>% 
-                      distinct(t, p_mean, p_sd, treatment),
-                    aes(t, p_mean, colour = treatment,
-                        ymin = p_mean - p_sd,
-                        ymax = p_mean + p_sd),
+                      distinct(t, m_mean, m_sd, treatment),
+                    aes(t, m_mean, colour = treatment,
+                        ymin = m_mean - m_sd,
+                        ymax = m_mean + m_sd),
                     size = 0.2, shape = 16,
                     linewidth = 0.4) +
     scale_colour_manual(values = c("#81a512", "#5e5003")) +
@@ -9047,7 +9416,7 @@ Fig_2_m <- Brouwer_prediction_summary_longer %>%
     scale_x_continuous(breaks = seq(0, 320, 80)) +
     scale_y_continuous(breaks = seq(0, 1.2, 0.4),
                        labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
-    labs(x = expression(italic("t")*" (d)"),
+    labs(x = expression(italic("t")*" (days)"),
          y = expression(italic(tilde("m")))) +
     coord_cartesian(xlim = c(0, 320), ylim = c(0, 1.2),
                     expand = F, clip = "off") +
@@ -9055,44 +9424,141 @@ Fig_2_m <- Brouwer_prediction_summary_longer %>%
     theme(legend.position.inside = c(0.9, 0.15),
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
-          axis.title.y = element_text(vjust = 0))
+          axis.title.y = element_text(vjust = 0),
+          axis.line.y = element_blank())
 
-require(patchwork)
-Fig_2 <- Fig_2_m / Fig_2_nu / Fig_2_mu / Fig_2_k
+# Combine components and save
+Fig_2 <- Fig_2_m / Fig_2_mu / Fig_2_k
 Fig_2 %>%
   ggsave(filename = "Figure_2.pdf", path = "Figures",
-         device = cairo_pdf, width = 10, height = 20, units = "cm")
+         device = cairo_pdf, width = 10, height = 15, units = "cm")
 
 # 8.1.2 Figure S2 ####
+# Load predictions
+Brouwer_k_prediction <- here("RDS", "Brouwer_k_prediction.rds") %>%
+  read_rds()
+
+# Plot components
+Fig_S2_k <- Brouwer_k_prior_posterior %>%
+  group_by(treatment) %>%
+  median_qi(k, .width = c(.5, .8, .9)) %>%
+  expand_grid(t = c(0, 320)) %>%
+  filter(treatment != "Prior") %>%
+  ggplot() +
+    geom_line(aes(t, -k, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = -.upper, ymax = -.lower,
+                    alpha = factor(.width), fill = treatment)) +
+    scale_colour_manual(values = c("#81a512", "#5e5003")) +
+    scale_fill_manual(values = c("#81a512", "#5e5003")) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 320, 80)) +
+    scale_y_continuous(breaks = seq(-0.09, 0, 0.03),
+                       labels = scales::label_number(accuracy = c(rep(0.01, 3), 1),
+                                                     style_negative = "minus")) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic("k")*" (day"^-1*")")) +
+    coord_cartesian(xlim = c(0, 320), ylim = c(-0.09, 0),
+                    expand = F, clip = "off") +
+    mytheme +
+    theme(legend.position = "none",
+          axis.title.y = element_text(vjust = -1))
+
+Fig_S2_mu <- Brouwer_k_prediction %>%
+  filter(treatment != "Prior") %>%
+  ggplot() +
+    geom_hline(yintercept = 1) +
+    geom_line(aes(t, m_mu, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    alpha = factor(.width), fill = treatment)) +
+    geom_density(data = Brouwer_k_prior_posterior %>%
+                   filter(treatment != "Prior") %>%
+                   mutate(t0.5 = log(2)/k), # Calculate half-life
+                 aes(x = t0.5, y = after_stat(density) * 1.5, fill = treatment),
+                 alpha = 0.8, colour = NA, bw = 320*0.005) +
+    geom_vline(xintercept = 0) +
+    geom_pointrange(data = data_mean_sd %>%
+                      filter(reference == "Brouwer 1996") %>%
+                      droplevels() %>% 
+                      distinct(t, m_mean, m_sd, treatment),
+                    aes(t, m_mean, colour = treatment,
+                        ymin = m_mean - m_sd,
+                        ymax = m_mean + m_sd),
+                    size = 0.2, shape = 16,
+                    linewidth = 0.4) +
+    scale_colour_manual(values = c("#81a512", "#5e5003")) +
+    scale_fill_manual(values = c("#81a512", "#5e5003")) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 320, 80),
+                       limits = c(0, 320),
+                       oob = scales::oob_keep) +
+    scale_y_continuous(breaks = seq(0, 1.2, 0.4),
+                       labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    coord_cartesian(ylim = c(0, 1.2),
+                    expand = F, clip = "off") +
+    mytheme +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.y = element_text(vjust = 0),
+          axis.line.y = element_blank(),
+          legend.position = "none")
+
+Fig_S2_m <- Brouwer_k_prediction %>%
+  filter(treatment != "Prior") %>%
+  ggplot() +
+    geom_hline(yintercept = 1) +
+    geom_line(aes(t, m, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m.lower, ymax = m.upper,
+                    alpha = factor(.width), fill = treatment)) +
+    geom_vline(xintercept = 0) +
+    geom_pointrange(data = data_mean_sd %>%
+                      filter(reference == "Brouwer 1996") %>%
+                      droplevels() %>% 
+                      distinct(t, m_mean, m_sd, treatment),
+                    aes(t, m_mean, colour = treatment,
+                        ymin = m_mean - m_sd,
+                        ymax = m_mean + m_sd),
+                    size = 0.2, shape = 16,
+                    linewidth = 0.4) +
+    scale_colour_manual(values = c("#81a512", "#5e5003")) +
+    scale_fill_manual(values = c("#81a512", "#5e5003")) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 320, 80)) +
+    scale_y_continuous(breaks = seq(0, 1.2, 0.4),
+                       labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(tilde("m")))) +
+    coord_cartesian(xlim = c(0, 320), ylim = c(0, 1.2),
+                    expand = F, clip = "off") +
+    mytheme +
+    theme(legend.position.inside = c(0.9, 0.15),
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.y = element_text(vjust = 0),
+          axis.line.y = element_blank())
+
+# Combine components and save
+Fig_S2 <- Fig_S2_m / Fig_S2_mu / Fig_S2_k
+Fig_S2 %>%
+  ggsave(filename = "Figure_S2.pdf", path = "Figures",
+         device = cairo_pdf, width = 10, height = 15, units = "cm")
 
 # 8.2 Senescence ####
 # 8.2.1 Figure 3 ####
-Hamersley_prediction_summary_longer <- Hamersley_prediction_summary %>%
-  filter(treatment != "Prior") %>%
-  pivot_longer(cols = -c(t, treatment, .width, .point, .interval),
-               names_to = c("parameter", "name"),
-               names_sep = "\\.") %>%
-  replace_na(list(name = "median")) %>%
-  pivot_wider(names_from = name,
-              values_from = value) %T>%
-  print()
+# Load predictions
+Hamersley_prediction <- here("RDS", "Hamersley_prediction.rds") %>%
+  read_rds()
+Bettignies_prediction <- here("RDS", "Bettignies_prediction.rds") %>%
+  read_rds()
 
-Bettignies_prediction_summary_longer <- Bettignies_prediction_summary %>%
-  filter(treatment != "Prior") %>%
-  pivot_longer(cols = -c(t, treatment, .width, .point, .interval),
-               names_to = c("parameter", "name"),
-               names_sep = "\\.") %>%
-  replace_na(list(name = "median")) %>%
-  pivot_wider(names_from = name,
-              values_from = value) %T>%
-  print()
-
-Fig_3a_k <- Hamersley_prediction_summary_longer %>%
-  filter(parameter == "k") %>%
+# Plot components
+Fig_3a_k <- Hamersley_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
   ggplot() +
     geom_hline(yintercept = 0) +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
+    geom_line(aes(t, k, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper,
                     alpha = factor(.width), fill = treatment)) +
     scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
@@ -9101,33 +9567,29 @@ Fig_3a_k <- Hamersley_prediction_summary_longer %>%
     scale_y_continuous(breaks = seq(-0.16, 0.02, 0.06),
                        labels = scales::label_number(accuracy = c(0.01, 0.1, 0.01, 0.01),
                                                      style_negative = "minus")) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic("k")*" (d"^-1*")")) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic("k")*" (day"^-1*")")) +
     coord_cartesian(xlim = c(0, 25), ylim = c(-0.16, 0.02),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.y = element_text(vjust = -1),
           legend.position = "none")
 
-Fig_3a_mu <- Hamersley_prediction_summary_longer %>%
-  filter(parameter == "p_mu") %>%
+Fig_3a_mu <- Hamersley_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
   ggplot() +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
+    geom_line(aes(t, m_mu, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
                     alpha = factor(.width), fill = treatment)) +
-    geom_pointrange(data = data %>%
-                      filter(reference == "Hamersley et al. 2015" & t != 0) %>%
-                      droplevels() %>% 
-                      distinct(t, p_mean, p_sd, treatment),
-                    aes(t, p_mean, colour = treatment,
-                        ymin = p_mean - p_sd,
-                        ymax = p_mean + p_sd),
-                    size = 0.2, shape = 16,
-                    linewidth = 0.4) +
+    geom_point(data = data %>%
+                 filter(reference == "Hamersley et al. 2015" & t != 0) %>%
+                 droplevels(),
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
     geom_density(data = Hamersley_prior_posterior %>%
-                   filter(treatment != "Prior"),
-                 aes(x = mu, y = after_stat(density) * 0.2, fill = treatment),
-                 alpha = 0.8, colour = NA) +
+                   filter(!treatment %in% c("Prior", "Global")),
+                 aes(x = mu, y = after_stat(density) * 0.3, fill = treatment),
+                 alpha = 0.8, colour = NA, bw = 25*0.005) +
     scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
@@ -9136,8 +9598,8 @@ Fig_3a_mu <- Hamersley_prediction_summary_longer %>%
                        oob = scales::oob_keep) +
     scale_y_continuous(breaks = seq(0, 1, 0.25),
                        labels = scales::label_number(accuracy = c(1, 0.01, 0.1, 0.01, 1))) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic("μ"["m"]))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
     coord_cartesian(ylim = c(0, 1),
                     expand = F, clip = "off") +
     mytheme +
@@ -9147,48 +9609,50 @@ Fig_3a_mu <- Hamersley_prediction_summary_longer %>%
           axis.text.x = element_blank(),
           axis.title.y = element_text(vjust = -.33))
 
-Fig_3b_k <- Bettignies_prediction_summary_longer %>%
-  filter(parameter == "k") %>%
+Fig_3b_k <- Bettignies_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  mutate(treatment2 = treatment %>% str_extract("^\\S+")) %>%
   ggplot() +
     geom_hline(yintercept = 0) +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
-                    alpha = factor(.width), fill = treatment)) +
+    geom_line(aes(t, k, group = treatment, colour = treatment2)) +
+    geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper,
+                    group = interaction(treatment, .width),
+                    alpha = factor(.width), fill = treatment2)) +
     scale_colour_manual(values = c("#81a512", "#afab00")) +
     scale_fill_manual(values = c("#81a512", "#afab00")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
     scale_x_continuous(breaks = seq(0, 180, 30)) +
-    scale_y_continuous(breaks = seq(-0.04, 0.02, 0.02),
-                       labels = scales::label_number(accuracy = c(rep(0.01, 2), 1, 0.01),
-                                                     style_negative = "minus")) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic("k")*" (d"^-1*")")) +
-    coord_cartesian(xlim = c(0, 180), ylim = c(-0.04, 0.02),
+    scale_y_continuous(breaks = seq(-0.05, 0.01, 0.02),
+                       labels = scales::label_number(style_negative = "minus")) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic("k")*" (day"^-1*")")) +
+    coord_cartesian(xlim = c(0, 180), ylim = c(-0.05, 0.01),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.y = element_text(vjust = -1),
           legend.position = "none")
 
-Fig_3b_mu <- Bettignies_prediction_summary_longer %>%
-  filter(parameter == "p_mu") %>%
+Fig_3b_mu <- Bettignies_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  mutate(treatment2 = treatment %>% str_extract("^\\S+")) %>%
   ggplot() +
     geom_hline(yintercept = 1) +
-    geom_line(aes(t, median, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = lower, ymax = upper,
-                    alpha = factor(.width), fill = treatment)) +
-    geom_pointrange(data = data %>%
-                      filter(reference == "de Bettignies et al. 2020" & t != 0) %>%
-                      droplevels() %>% 
-                      distinct(t, p_mean, p_sd, treatment),
-                    aes(t, p_mean, colour = treatment,
-                        ymin = p_mean - p_sd,
-                        ymax = p_mean + p_sd),
-                    size = 0.2, shape = 16,
-                    linewidth = 0.4) +
+    geom_line(aes(t, m_mu, group = treatment, colour = treatment2)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    group = interaction(treatment, .width),
+                    alpha = factor(.width), fill = treatment2)) +
+    geom_point(data = data %>%
+                 filter(reference == "de Bettignies et al. 2020" & t != 0) %>%
+                 droplevels() %>%
+                 mutate(treatment2 = treatment %>% str_extract("^\\S+")),
+               aes(t, m, colour = treatment2), 
+               size = 1, shape = 16, alpha = 0.6) +
     geom_density(data = Bettignies_prior_posterior %>%
-                   filter(treatment != "Prior"),
-                 aes(x = mu, y = after_stat(density) * 1.2, fill = treatment),
-                 alpha = 0.8, colour = NA) +
+                   filter(!treatment %in% c("Prior", "Global")) %>%
+                   mutate(treatment2 = treatment %>% str_extract("^\\S+")),
+                 aes(x = mu, y = after_stat(density) * 2, 
+                     group = treatment, fill = treatment2),
+                 alpha = 0.8, colour = NA, bw = 180*0.005) +
     scale_colour_manual(values = c("#81a512", "#afab00")) +
     scale_fill_manual(values = c("#81a512", "#afab00")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
@@ -9197,8 +9661,8 @@ Fig_3b_mu <- Bettignies_prediction_summary_longer %>%
                        oob = scales::oob_keep) +
     scale_y_continuous(breaks = seq(0, 1.2, 0.4),
                        labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic("μ"["m"]))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
     coord_cartesian(ylim = c(0, 1.2),
                     expand = F, clip = "off") +
     mytheme +
@@ -9208,6 +9672,7 @@ Fig_3b_mu <- Bettignies_prediction_summary_longer %>%
           axis.text.x = element_blank(),
           axis.title.y = element_text(vjust = -.33))
 
+# Combine components and save
 Fig_3 <- ( Fig_3a_mu / Fig_3a_k / Fig_3b_mu / Fig_3b_k ) +
   plot_annotation(tag_levels = list(c("a", "", "b", ""))) &
   theme(plot.tag = element_text(family = "Futura", size = 12, face = "bold"),
@@ -9216,10 +9681,150 @@ Fig_3 <- ( Fig_3a_mu / Fig_3a_k / Fig_3b_mu / Fig_3b_k ) +
 Fig_3 %>%
   ggsave(filename = "Figure_3.pdf", path = "Figures",
          device = cairo_pdf, width = 10, height = 20, units = "cm")
-# Safe to ignore warning due to missing s.d. for senescent treatment.
 
 # 8.2.2 Figure S3 ####
+# Load predictions
+Hamersley_k_prediction <- here("RDS", "Hamersley_k_prediction.rds") %>%
+  read_rds()
+Bettignies_k_prediction <- here("RDS", "Bettignies_k_prediction.rds") %>%
+  read_rds()
 
+# Plot components
+Fig_S3a_k <- Hamersley_k_prior_posterior %>%
+  group_by(treatment) %>%
+  median_qi(k, .width = c(.5, .8, .9)) %>%
+  expand_grid(t = c(0, 25)) %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  ggplot() +
+    geom_hline(yintercept = 0) +
+    geom_line(aes(t, -k, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = -.upper, ymax = -.lower,
+                    alpha = factor(.width), fill = treatment)) +
+    scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
+    scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 25, 5)) +
+    scale_y_continuous(breaks = seq(-0.16, 0.02, 0.06),
+                       labels = scales::label_number(accuracy = c(0.01, 0.1, 0.01, 0.01),
+                                                     style_negative = "minus")) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic("k")*" (day"^-1*")")) +
+    coord_cartesian(xlim = c(0, 25), ylim = c(-0.16, 0.02),
+                    expand = F, clip = "off") +
+    mytheme +
+    theme(axis.title.y = element_text(vjust = -1),
+          legend.position = "none")
+
+Fig_S3a_mu <- Hamersley_k_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  ggplot() +
+    geom_line(aes(t, m_mu, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    alpha = factor(.width), fill = treatment)) +
+    geom_point(data = data %>%
+                 filter(reference == "Hamersley et al. 2015" & t != 0) %>%
+                 droplevels(),
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
+    geom_density(data = Hamersley_k_prior_posterior %>%
+                   filter(!treatment %in% c("Prior", "Global")) %>%
+                   mutate(t0.5 = log(2)/k), # Calculate half-life,
+                 aes(x = t0.5, y = after_stat(density) * 0.3, fill = treatment),
+                 alpha = 0.8, colour = NA, bw = 25*0.005) +
+    scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
+    scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 25, 5),
+                       limits = c(0, 25),
+                       oob = scales::oob_keep) +
+    scale_y_continuous(breaks = seq(0, 1, 0.25),
+                       labels = scales::label_number(accuracy = c(1, 0.01, 0.1, 0.01, 1))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    coord_cartesian(ylim = c(0, 1),
+                    expand = F, clip = "off") +
+    mytheme +
+    theme(plot.margin = margin(0.2, 0.25, 0, 0, unit = "cm"),
+          legend.position.inside = c(0.89, 0.89),
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.y = element_text(vjust = -.33))
+
+Fig_S3b_k <- Bettignies_k_prior_posterior %>%
+  group_by(treatment) %>%
+  median_qi(k, .width = c(.5, .8, .9)) %>%
+  expand_grid(t = c(0, 180)) %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  mutate(treatment2 = treatment %>% str_extract("^\\S+")) %>%
+  ggplot() +
+    geom_hline(yintercept = 0) +
+    geom_line(aes(t, -k, group = treatment, colour = treatment2)) +
+    geom_ribbon(aes(t, ymin = -.upper, ymax = -.lower,
+                    group = interaction(treatment, .width),
+                    alpha = factor(.width), fill = treatment2)) +
+    scale_colour_manual(values = c("#81a512", "#afab00")) +
+    scale_fill_manual(values = c("#81a512", "#afab00")) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 180, 30)) +
+    scale_y_continuous(breaks = seq(-0.05, 0.01, 0.02),
+                       labels = scales::label_number(style_negative = "minus")) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic("k")*" (day"^-1*")")) +
+    coord_cartesian(xlim = c(0, 180), ylim = c(-0.05, 0.01),
+                    expand = F, clip = "off") +
+    mytheme +
+    theme(axis.title.y = element_text(vjust = -1),
+          legend.position = "none")
+
+Fig_S3b_mu <- Bettignies_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  mutate(treatment2 = treatment %>% str_extract("^\\S+")) %>%
+  ggplot() +
+    geom_hline(yintercept = 1) +
+    geom_line(aes(t, m_mu, group = treatment, colour = treatment2)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    group = interaction(treatment, .width),
+                    alpha = factor(.width), fill = treatment2)) +
+    geom_point(data = data %>%
+                 filter(reference == "de Bettignies et al. 2020" & t != 0) %>%
+                 droplevels() %>%
+                 mutate(treatment2 = treatment %>% str_extract("^\\S+")),
+               aes(t, m, colour = treatment2), 
+               size = 1, shape = 16, alpha = 0.6) +
+    geom_density(data = Bettignies_prior_posterior %>%
+                   filter(!treatment %in% c("Prior", "Global")) %>%
+                   mutate(treatment2 = treatment %>% str_extract("^\\S+")),
+                 aes(x = mu, y = after_stat(density) * 2, 
+                     group = treatment, fill = treatment2),
+                 alpha = 0.8, colour = NA, bw = 180*0.005) +
+    scale_colour_manual(values = c("#81a512", "#afab00")) +
+    scale_fill_manual(values = c("#81a512", "#afab00")) +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 180, 30),
+                       limits = c(0, 180),
+                       oob = scales::oob_keep) +
+    scale_y_continuous(breaks = seq(0, 1.2, 0.4),
+                       labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    coord_cartesian(ylim = c(0, 1.2),
+                    expand = F, clip = "off") +
+    mytheme +
+    theme(plot.margin = margin(0.2, 0.25, 0, 0, unit = "cm"),
+          legend.position = "none",
+          axis.title.x = element_blank(),
+          axis.text.x = element_blank(),
+          axis.title.y = element_text(vjust = -.33))
+
+# Combine components and save
+Fig_S3 <- ( Fig_S3a_mu / Fig_S3a_k / Fig_S3b_mu / Fig_S3b_k ) +
+  plot_annotation(tag_levels = list(c("a", "", "b", ""))) &
+  theme(plot.tag = element_text(family = "Futura", size = 12, face = "bold"),
+        plot.tag.position = c(-0.002, 1.04))
+
+Fig_S3 %>%
+  ggsave(filename = "Figure_S3.pdf", path = "Figures",
+         device = cairo_pdf, width = 10, height = 20, units = "cm")
 
 # 8.3 Season ####
 # 8.3.1 Figure 4 ####
@@ -9352,12 +9957,10 @@ Fig_4 %>%
 
 # 8.4.2 Figure S5 ####
 
-# 8.4.3 Figure S7a ####
 
 # 8.5 Temperature ####
 # 8.5.1 Figure 6 ####
 
 # 8.5.2 Figure S6 ####
 
-# 8.5.3 Figure S7b ####
 
