@@ -3680,7 +3680,8 @@ Brouwer_prediction <- Brouwer_prior_posterior %>%
                       filter(reference == "Brouwer 1996") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp(
       t * alpha - ( alpha + tau ) * mu / 5 * (
@@ -3701,7 +3702,8 @@ Brouwer_k_prediction <- Brouwer_k_prior_posterior %>%
                       filter(reference == "Brouwer 1996") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp( -k * t ),
     m = rnorm( n() , m_mu , sigma )
@@ -4188,7 +4190,8 @@ Hamersley_prediction <- Hamersley_prior_posterior %>%
                       filter(reference == "Hamersley et al. 2015") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp(
       t * alpha - ( alpha + tau ) * mu / 5 * (
@@ -4209,7 +4212,8 @@ Hamersley_k_prediction <- Hamersley_k_prior_posterior %>%
                       filter(reference == "Hamersley et al. 2015") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp( -k * t ),
     m = rnorm( n() , m_mu , sigma )
@@ -4692,7 +4696,8 @@ Bettignies_prediction <- Bettignies_prior_posterior %>%
                       filter(reference == "de Bettignies et al. 2020") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp(
       t * alpha - ( alpha + tau ) * mu / 5 * (
@@ -4704,9 +4709,30 @@ Bettignies_prediction <- Bettignies_prior_posterior %>%
     nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
     m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
   ) %>%
-  drop_na() %>% # Underflow of m_mu to 0 causes m to be NA, only 49 cases in prior
+  # Underflow of m_mu to 0 causes m to be NA (only 49 cases in prior) and
+  # median_qi() fails because it is memory-inefficient, so I use summarise()
+  # with na.rm = T in all functions.
   group_by(t, treatment) %>%
-  median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
+  summarise(
+    across(
+      c(m_mu, k, nu, m),
+      list(
+        median = ~ median(.x, na.rm = T), 
+        lower_0.5 = ~ qi(.x, .width = .5, na.rm = T)[1],
+        upper_0.5 = ~ qi(.x, .width = .5, na.rm = T)[2],
+        lower_0.8 = ~ qi(.x, .width = .8, na.rm = T)[1],
+        upper_0.8 = ~ qi(.x, .width = .8, na.rm = T)[2],
+        lower_0.9 = ~ qi(.x, .width = .9, na.rm = T)[1],
+        upper_0.9 = ~ qi(.x, .width = .9, na.rm = T)[2]
+      ),
+      .names = "{.col}.{.fn}"
+    )
+  ) %>%
+  ungroup() %>%
+  rename(m_mu = m_mu.median, k = k.median, nu = nu.median, m = m.median) %>%
+  pivot_longer(cols = contains("lower") | contains("upper")) %>%
+  separate(col = name, into = c("name", ".width"), sep = "_(?=[^_]*$)") %>%
+  pivot_wider(names_from = name, values_from = value) %T>%
   print()
 # Warning can be ignored because I took care of NAs before summary:
 Bettignies_prediction %>% filter(if_any(everything(), is.na))
@@ -4716,7 +4742,8 @@ Bettignies_k_prediction <- Bettignies_k_prior_posterior %>%
                       filter(reference == "de Bettignies et al. 2020") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp( -k * t ),
     m = rnorm( n() , m_mu , sigma )
@@ -5203,7 +5230,8 @@ Bourguès_prediction <- Bourguès_prior_posterior %>%
                       filter(reference == "Bourguès et al. 1996") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp(
       t * alpha - ( alpha + tau ) * mu / 5 * (
@@ -5214,9 +5242,28 @@ Bourguès_prediction <- Bourguès_prior_posterior %>%
     k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
     nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
     m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
-  ) %>%
+  ) %>% # median_qi() is memory-inefficient
   group_by(t, treatment) %>%
-  median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
+  summarise(
+    across(
+      c(m_mu, k, nu, m),
+      list(
+        median = ~ median(.x, na.rm = T), 
+        lower_0.5 = ~ qi(.x, .width = .5, na.rm = T)[1],
+        upper_0.5 = ~ qi(.x, .width = .5, na.rm = T)[2],
+        lower_0.8 = ~ qi(.x, .width = .8, na.rm = T)[1],
+        upper_0.8 = ~ qi(.x, .width = .8, na.rm = T)[2],
+        lower_0.9 = ~ qi(.x, .width = .9, na.rm = T)[1],
+        upper_0.9 = ~ qi(.x, .width = .9, na.rm = T)[2]
+      ),
+      .names = "{.col}.{.fn}"
+    )
+  ) %>%
+  ungroup() %>%
+  rename(m_mu = m_mu.median, k = k.median, nu = nu.median, m = m.median) %>%
+  pivot_longer(cols = contains("lower") | contains("upper")) %>%
+  separate(col = name, into = c("name", ".width"), sep = "_(?=[^_]*$)") %>%
+  pivot_wider(names_from = name, values_from = value) %T>%
   print()
 
 Bourguès_k_prediction <- Bourguès_k_prior_posterior %>%
@@ -5224,7 +5271,8 @@ Bourguès_k_prediction <- Bourguès_k_prior_posterior %>%
                       filter(reference == "Bourguès et al. 1996") %>%
                       droplevels(), 
                     predictor_name = "t",
-                    group_name = "treatment") %>%
+                    group_name = "treatment",
+                    length = 150) %>%
   mutate(
     m_mu = exp( -k * t ),
     m = rnorm( n() , m_mu , sigma )
@@ -6095,36 +6143,88 @@ Frontier2021_k_prior_posterior_replicate %>%
 # 6.5.7 Continuous prediction ####
 # Treatment predictions
 Frontier2021_prediction <- Frontier2021_prior_posterior %>%
-  spread_continuous(data = data %>% 
-                      filter(reference == "Frontier et al. 2021") %>%
-                      droplevels(), # All groups have the same predictor range
-                    predictor_name = "t") %>%
-  mutate(
-    m_mu = exp(
-      t * alpha - ( alpha + tau ) * mu / 5 * (
-        log1p_exp( 5 / mu * ( t - mu ) ) -
-          log1p_exp( -5 )
-      )
-    ),
-    k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
-    nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
-    m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
+  nest(.by = c(species, treatment), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
+      filter(reference == "Frontier et al. 2021") %>%
+      droplevels() %>%
+      select(species, treatment, t) %>%
+      nest(.by = c(species, treatment), .key = "t")
   ) %>%
-  group_by(t, species, treatment) %>%
-  median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2021") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
+    prediction = map2(
+      prior_posterior, predictor,
+      ~.x %>% 
+        slice( rep( 1:n() , each = length(.y) ) ) %>%
+        mutate(
+          t = rep( .y , times = nrow(.x) ),
+          m_mu = exp(
+            t * alpha - ( alpha + tau ) * mu / 5 * (
+              log1p_exp( 5 / mu * ( t - mu ) ) -
+                log1p_exp( -5 )
+            )
+          ),
+          k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
+          nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
+          m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
+        ) %>%
+        group_by(t) %>%
+        median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
+        print() # Printing helps keep track of progress
+    )
+  ) %>% 
+  select(-c(prior_posterior, t, predictor)) %>%
+  unnest(prediction) %T>%
   print()
 
 Frontier2021_k_prediction <- Frontier2021_k_prior_posterior %>%
-  spread_continuous(data = data %>% 
-                      filter(reference == "Frontier et al. 2021") %>%
-                      droplevels(),
-                    predictor_name = "t") %>%
-  mutate(
-    m_mu = exp( -k * t ),
-    m = rnorm( n() , m_mu , sigma )
+  nest(.by = c(species, treatment), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
+      filter(reference == "Frontier et al. 2021") %>%
+      droplevels() %>%
+      select(species, treatment, t) %>%
+      nest(.by = c(species, treatment), .key = "t")
   ) %>%
-  group_by(t, species, treatment) %>%
-  median_qi(m_mu, m, .width = c(.5, .8, .9)) %T>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2021") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
+    prediction = map2(
+      prior_posterior, predictor,
+      ~.x %>% 
+        slice( rep( 1:n() , each = length(.y) ) ) %>%
+        mutate(
+          t = rep( .y , times = nrow(.x) ),
+          m_mu = exp( -k * t ),
+          m = rnorm( n() , m_mu , sigma )
+        ) %>%
+        group_by(t) %>%
+        median_qi(m_mu, m, .width = c(.5, .8, .9)) %T>%
+        print()
+    )
+  ) %>% 
+  select(-c(prior_posterior, t, predictor)) %>%
+  unnest(prediction) %T>%
   print()
 
 # Save predictions
@@ -6168,16 +6268,28 @@ Frontier2021_prediction_beta %>%
 Frontier2021_k_prediction_beta %>%
   write_rds(here("RDS", "Frontier2021_k_prediction_beta.rds"))
 
-# Replicate predictions require a different approach
+# Replicate predictions
 Frontier2021_prediction_replicate <- Frontier2021_prior_posterior_replicate %>%
-  group_by(species, replicate, treatment, depth) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>% # Nesting causes grouping which should be undone
-  mutate(
-    predictor = data %>% 
+  nest(.by = c(species, replicate, treatment, depth), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
       filter(reference == "Frontier et al. 2021") %>%
-      droplevels() %$%
-      list( seq(min(t), max(t), length.out = 100) ),
+      droplevels() %>%
+      select(species, replicate, treatment, t) %>%
+      nest(.by = c(species, replicate, treatment), .key = "t")
+  ) %>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2021") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
     prediction = map2(
       prior_posterior, predictor,
       ~.x %>% 
@@ -6194,22 +6306,34 @@ Frontier2021_prediction_replicate <- Frontier2021_prior_posterior_replicate %>%
         ) %>%
         group_by(t) %>%
         median_qi(m_mu, k, .width = c(.5, .8, .9)) %T>%
-        print() # Printing helps keep track of progress
+        print() 
     )
   ) %>% 
-  select(-c(prior_posterior, predictor)) %>%
+  select(-c(prior_posterior, t, predictor)) %>%
   unnest(prediction) %T>%
   print()
 
 Frontier2021_k_prediction_replicate <- Frontier2021_k_prior_posterior_replicate %>%
-  group_by(species, replicate, treatment, depth) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>%
-  mutate(
-    predictor = data %>% 
+  nest(.by = c(species, replicate, treatment, depth), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
       filter(reference == "Frontier et al. 2021") %>%
-      droplevels() %$%
-      list( seq(min(t), max(t), length.out = 100) ),
+      droplevels() %>%
+      select(species, replicate, treatment, t) %>%
+      nest(.by = c(species, replicate, treatment), .key = "t")
+  ) %>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2021") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
     prediction = map2(
       prior_posterior, predictor,
       ~.x %>% 
@@ -6223,7 +6347,7 @@ Frontier2021_k_prediction_replicate <- Frontier2021_k_prior_posterior_replicate 
         print()
     )
   ) %>% 
-  select(-c(prior_posterior, predictor)) %>%
+  select(-c(prior_posterior, t, predictor)) %>%
   unnest(prediction) %T>%
   print()
 
@@ -7135,36 +7259,88 @@ Frontier2022_k_prior_posterior_replicate %>%
 # 6.6.7 Continuous prediction ####
 # Treatment predictions
 Frontier2022_prediction <- Frontier2022_prior_posterior %>%
-  spread_continuous(data = data %>% 
-                      filter(reference == "Frontier et al. 2022") %>%
-                      droplevels(), # All groups have the same predictor range
-                    predictor_name = "t") %>%
-  mutate(
-    m_mu = exp(
-      t * alpha - ( alpha + tau ) * mu / 5 * (
-        log1p_exp( 5 / mu * ( t - mu ) ) -
-          log1p_exp( -5 )
-      )
-    ),
-    k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
-    nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
-    m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
+  nest(.by = c(species, treatment), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
+      filter(reference == "Frontier et al. 2022") %>%
+      droplevels() %>%
+      select(species, treatment, t) %>%
+      nest(.by = c(species, treatment), .key = "t")
   ) %>%
-  group_by(t, species, treatment) %>%
-  median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2022") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
+    prediction = map2(
+      prior_posterior, predictor,
+      ~.x %>% 
+        slice( rep( 1:n() , each = length(.y) ) ) %>%
+        mutate(
+          t = rep( .y , times = nrow(.x) ),
+          m_mu = exp(
+            t * alpha - ( alpha + tau ) * mu / 5 * (
+              log1p_exp( 5 / mu * ( t - mu ) ) -
+                log1p_exp( -5 )
+            )
+          ),
+          k = ( alpha + tau ) / ( 1 + exp( 5 / mu * ( t - mu ) ) ) - tau,
+          nu = ( epsilon - theta ) * exp( -lambda * t ) + theta,
+          m = rbetapr( n() , m_mu * ( 1 + nu ) , 2 + nu )
+        ) %>%
+        group_by(t) %>%
+        median_qi(m_mu, k, nu, m, .width = c(.5, .8, .9)) %T>%
+        print()
+    )
+  ) %>% 
+  select(-c(prior_posterior, t, predictor)) %>%
+  unnest(prediction) %T>%
   print()
 
 Frontier2022_k_prediction <- Frontier2022_k_prior_posterior %>%
-  spread_continuous(data = data %>% 
-                      filter(reference == "Frontier et al. 2022") %>%
-                      droplevels(),
-                    predictor_name = "t") %>%
-  mutate(
-    m_mu = exp( -k * t ),
-    m = rnorm( n() , m_mu , sigma )
+  nest(.by = c(species, treatment), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
+      filter(reference == "Frontier et al. 2022") %>%
+      droplevels() %>%
+      select(species, treatment, t) %>%
+      nest(.by = c(species, treatment), .key = "t")
   ) %>%
-  group_by(t, species, treatment) %>%
-  median_qi(m_mu, m, .width = c(.5, .8, .9)) %T>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2022") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
+    prediction = map2(
+      prior_posterior, predictor,
+      ~.x %>% 
+        slice( rep( 1:n() , each = length(.y) ) ) %>%
+        mutate(
+          t = rep( .y , times = nrow(.x) ),
+          m_mu = exp( -k * t ),
+          m = rnorm( n() , m_mu , sigma )
+        ) %>%
+        group_by(t) %>%
+        median_qi(m_mu, m, .width = c(.5, .8, .9)) %T>%
+        print()
+    )
+  ) %>% 
+  select(-c(prior_posterior, t, predictor)) %>%
+  unnest(prediction) %T>%
   print()
 
 # Save predictions
@@ -7208,16 +7384,28 @@ Frontier2022_prediction_beta %>%
 Frontier2022_k_prediction_beta %>%
   write_rds(here("RDS", "Frontier2022_k_prediction_beta.rds"))
 
-# Replicate predictions require a different approach
+# Replicate predictions
 Frontier2022_prediction_replicate <- Frontier2022_prior_posterior_replicate %>%
-  group_by(species, replicate, treatment, depth) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>%
-  mutate(
-    predictor = data %>% 
+  nest(.by = c(species, replicate, treatment, depth), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
       filter(reference == "Frontier et al. 2022") %>%
-      droplevels() %$%
-      list( seq(min(t), max(t), length.out = 100) ),
+      droplevels() %>%
+      select(species, replicate, treatment, t) %>%
+      nest(.by = c(species, replicate, treatment), .key = "t")
+  ) %>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2022") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
     prediction = map2(
       prior_posterior, predictor,
       ~.x %>% 
@@ -7234,22 +7422,34 @@ Frontier2022_prediction_replicate <- Frontier2022_prior_posterior_replicate %>%
         ) %>%
         group_by(t) %>%
         median_qi(m_mu, k, .width = c(.5, .8, .9)) %T>%
-        print()
+        print() 
     )
   ) %>% 
-  select(-c(prior_posterior, predictor)) %>%
+  select(-c(prior_posterior, t, predictor)) %>%
   unnest(prediction) %T>%
   print()
 
 Frontier2022_k_prediction_replicate <- Frontier2022_k_prior_posterior_replicate %>%
-  group_by(species, replicate, treatment, depth) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>%
-  mutate(
-    predictor = data %>% 
+  nest(.by = c(species, replicate, treatment, depth), .key = "prior_posterior") %>%
+  left_join(
+    data %>% 
       filter(reference == "Frontier et al. 2022") %>%
-      droplevels() %$%
-      list( seq(min(t), max(t), length.out = 100) ),
+      droplevels() %>%
+      select(species, replicate, treatment, t) %>%
+      nest(.by = c(species, replicate, treatment), .key = "t")
+  ) %>%
+  mutate(
+    predictor = t %>% 
+      map(
+        ~if(is.null(.x)){
+          data %>% 
+            filter(reference == "Frontier et al. 2022") %$%
+            seq(min(t), max(t), length.out = 150)
+        } else {
+          .x %$% 
+            seq(min(t), max(t), length.out = 150)
+        }
+      ),
     prediction = map2(
       prior_posterior, predictor,
       ~.x %>% 
@@ -7263,7 +7463,7 @@ Frontier2022_k_prediction_replicate <- Frontier2022_k_prior_posterior_replicate 
         print()
     )
   ) %>% 
-  select(-c(prior_posterior, predictor)) %>%
+  select(-c(prior_posterior, t, predictor)) %>%
   unnest(prediction) %T>%
   print()
 
@@ -8234,9 +8434,7 @@ Vandendriessche_k_prior_posterior_replicate %>%
 # 6.6.7 Continuous prediction ####
 # Macroalgal model species and treatment predictions
 Vandendriessche_prediction <- Vandendriessche_prior_posterior %>%
-  group_by(species, temperature, grazing) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>%
+  nest(.by = c(species, temperature, grazing), .key = "prior_posterior") %>%
   left_join(
     data %>%
       filter(reference == "Vandendriessche et al. 2007") %>%
@@ -8245,9 +8443,7 @@ Vandendriessche_prediction <- Vandendriessche_prior_posterior %>%
       mutate(temperature = temperature %>% fct(),
              grazing = grazing %>% fct()) %>%
       select(species, temperature, grazing, t) %>%
-      group_by(species, temperature, grazing) %>% 
-      nest(.key = "t") %>%
-      ungroup()
+      nest(.by = c(species, temperature, grazing), .key = "t")
   ) %>%
   mutate(
     predictor = t %>% 
@@ -8255,10 +8451,10 @@ Vandendriessche_prediction <- Vandendriessche_prior_posterior %>%
         ~if(is.null(.x)){
           data %>%
             filter(reference == "Vandendriessche et al. 2007") %$%
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         } else {
           .x %$% 
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         }
       ),
     prediction = map2(
@@ -8289,9 +8485,7 @@ Vandendriessche_prediction <- Vandendriessche_prior_posterior %>%
 # Macroalgal model replicate predictions
 Vandendriessche_prediction_replicate <- Vandendriessche_prior_posterior_replicate %>%
   mutate(grazing = if_else(grazing == 0.5, "Grazed", "Control") %>% fct()) %>%
-  group_by(species, temperature, grazing, replicate) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>%
+  nest(.by = c(species, temperature, grazing, replicate), .key = "prior_posterior") %>%
   left_join(
     data %>%
       filter(reference == "Vandendriessche et al. 2007") %>%
@@ -8300,9 +8494,7 @@ Vandendriessche_prediction_replicate <- Vandendriessche_prior_posterior_replicat
       mutate(temperature = temperature %>% fct(),
              grazing = grazing %>% fct()) %>%
       select(species, temperature, grazing, replicate, t) %>%
-      group_by(species, temperature, grazing, replicate) %>% 
-      nest(.key = "t") %>%
-      ungroup()
+      nest(.by = c(species, temperature, grazing, replicate), .key = "t")
   ) %>%
   mutate(
     predictor = t %>% 
@@ -8310,10 +8502,10 @@ Vandendriessche_prediction_replicate <- Vandendriessche_prior_posterior_replicat
         ~if(is.null(.x)){
           data %>%
             filter(reference == "Vandendriessche et al. 2007") %$%
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         } else {
           .x %$% 
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         }
       ),
     prediction = map2(
@@ -8341,9 +8533,7 @@ Vandendriessche_prediction_replicate <- Vandendriessche_prior_posterior_replicat
 
 # Conventional model species and treatment predictions
 Vandendriessche_k_prediction <- Vandendriessche_k_prior_posterior %>%
-  group_by(species, temperature, grazing) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>%
+  nest(.by = c(species, temperature, grazing), .key = "prior_posterior") %>%
   left_join(
     data %>%
       filter(reference == "Vandendriessche et al. 2007") %>%
@@ -8352,9 +8542,7 @@ Vandendriessche_k_prediction <- Vandendriessche_k_prior_posterior %>%
       mutate(temperature = temperature %>% fct(),
              grazing = grazing %>% fct()) %>%
       select(species, temperature, grazing, t) %>%
-      group_by(species, temperature, grazing) %>% 
-      nest(.key = "t") %>%
-      ungroup()
+      nest(.by = c(species, temperature, grazing), .key = "t")
   ) %>%
   mutate(
     predictor = t %>% 
@@ -8362,10 +8550,10 @@ Vandendriessche_k_prediction <- Vandendriessche_k_prior_posterior %>%
         ~if(is.null(.x)){
           data %>%
             filter(reference == "Vandendriessche et al. 2007") %$%
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         } else {
           .x %$% 
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         }
       ),
     prediction = map2(
@@ -8389,9 +8577,7 @@ Vandendriessche_k_prediction <- Vandendriessche_k_prior_posterior %>%
 # Conventional model replicate predictions
 Vandendriessche_k_prediction_replicate <- Vandendriessche_k_prior_posterior_replicate %>%
   mutate(grazing = if_else(grazing == 0.5, "Grazed", "Control") %>% fct()) %>%
-  group_by(species, temperature, grazing, replicate) %>% 
-  nest(.key = "prior_posterior") %>%
-  ungroup() %>%
+  nest(.by = c(species, temperature, grazing, replicate), .key = "prior_posterior") %>%
   left_join(
     data %>%
       filter(reference == "Vandendriessche et al. 2007") %>%
@@ -8400,9 +8586,7 @@ Vandendriessche_k_prediction_replicate <- Vandendriessche_k_prior_posterior_repl
       mutate(temperature = temperature %>% fct(),
              grazing = grazing %>% fct()) %>%
       select(species, temperature, grazing, replicate, t) %>%
-      group_by(species, temperature, grazing, replicate) %>% 
-      nest(.key = "t") %>%
-      ungroup()
+      nest(.by = c(species, temperature, grazing, replicate), .key = "t")
   ) %>%
   mutate(
     predictor = t %>% 
@@ -8410,10 +8594,10 @@ Vandendriessche_k_prediction_replicate <- Vandendriessche_k_prior_posterior_repl
         ~if(is.null(.x)){
           data %>%
             filter(reference == "Vandendriessche et al. 2007") %$%
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         } else {
           .x %$% 
-            seq(min(t), max(t), length.out = 100)
+            seq(min(t), max(t), length.out = 150)
         }
       ),
     prediction = map2(
@@ -8597,7 +8781,7 @@ rm( list = ls( pattern = "Vandendriessche" ) )
 gc()
 
 # 7. Tables ####
-# 7.1 Table 1 ####
+# 7.1 Tables 1 and 2 ####
 # 7.1.1 Load data ####
 # Example 1
 Brouwer_prior_posterior <- here("RDS", "Brouwer_prior_posterior.rds") %>%
@@ -8641,62 +8825,47 @@ Vandendriessche_prior_posterior <- here("RDS", "Vandendriessche_prior_posterior.
 Vandendriessche_k_prior_posterior <- here("RDS", "Vandendriessche_k_prior_posterior.rds") %>%
   read_rds()
 
-# 7.1.2 Merge an calculate tau - k ####
+# 7.1.2 Merge and contrast ####
 # Example 1
 Brouwer_parameters <- Brouwer_prior_posterior %>%
-  full_join(Brouwer_k_prior_posterior) %>%
-  mutate(diff = tau - k,
-         ratio = tau / k) %T>%
+  full_join(Brouwer_k_prior_posterior) %T>%
   print()
 
 # Example 2
 Hamersley_parameters <- Hamersley_prior_posterior %>%
-  full_join(Hamersley_k_prior_posterior) %>%
-  mutate(diff = tau - k,
-         ratio = tau / k) %T>%
+  full_join(Hamersley_k_prior_posterior) %T>%
   print()
 
 # Example 3
 Bettignies_parameters <- Bettignies_prior_posterior %>%
-  full_join(Bettignies_k_prior_posterior) %>%
-  mutate(diff = tau - k,
-         ratio = tau / k) %T>%
+  full_join(Bettignies_k_prior_posterior) %T>%
   print()
 
 # Example 4
 Bourguès_parameters <- Bourguès_prior_posterior %>%
-  full_join(Bourguès_k_prior_posterior) %>%
-  mutate(diff = tau - k,
-         ratio = tau / k) %T>%
+  full_join(Bourguès_k_prior_posterior) %T>%
   print()
 
 # Example 5
 Frontier2021_parameters <- Frontier2021_prior_posterior %>% select(-beta) %>%
-  full_join(Frontier2021_k_prior_posterior %>% select(-beta)) %>%
-  mutate(diff = tau - k,
-         ratio = tau / k) %T>%
+  full_join(Frontier2021_k_prior_posterior %>% select(-beta)) %T>%
   print()
 
 # Example 6
 Frontier2022_parameters <- Frontier2022_prior_posterior %>% select(-beta) %>%
-  full_join(Frontier2022_k_prior_posterior %>% select(-beta)) %>%
-  mutate(diff = tau - k,
-         ratio = tau / k) %T>%
+  full_join(Frontier2022_k_prior_posterior %>% select(-beta)) %T>%
   print()
 
 # Example 7
 Vandendriessche_parameters <- Vandendriessche_prior_posterior %>%
-  full_join(Vandendriessche_k_prior_posterior) %>%
-  mutate(diff = tau - k,
-         ratio = tau / k) %T>%
+  full_join(Vandendriessche_k_prior_posterior) %T>%
   print()
 
-# 7.1.3 Summarise ####
-require(glue)
+# Combined
 data_mean_sd %>% distinct(reference, species)
 data %>% distinct(reference, species)
 
-Table_1 <- bind_rows( # Combine into one tibble
+parameters <- bind_rows( # Combine into one tibble
   Brouwer = Brouwer_parameters %>% 
     mutate(species = "Desmarestia anceps" %>% fct()),
   Hamersley = Hamersley_parameters %>% 
@@ -8714,13 +8883,28 @@ Table_1 <- bind_rows( # Combine into one tibble
     unite(col = "treatment", temperature, grazing, sep = " ") %>%
     mutate(treatment = treatment %>% fct()),
   .id = "reference"
-) %>% # I am converting k, alpha, tau and tau - k to % for readability
-  mutate(t0.5 = log(2)/k, # Calculate half-life beforehand
-         k = k * 100, 
+) %>%
+  mutate(
+    reference = reference %>% 
+      fct_relevel("Brouwer", "Hamersley", "Bettignies", "Bourguès",
+                  "Frontier2021", "Frontier2022"),
+    tau_k_diff = tau - k,
+    tau_k_ratio = tau / k,
+    t0.5 = log(2)/k,
+    t0.5_mu_diff = t0.5 - mu,
+    t0.5_mu_ratio = t0.5 / mu 
+  ) %T>%
+  print()
+
+# 7.1.3 Summarise ####
+require(glue)
+parameters_summary <- parameters %>% 
+  mutate(k = k * 100, # I am converting exponential rates to % for readability
          alpha = alpha * 100,
          tau = tau * 100,
-         diff = diff * 100,
-         log_ratio = log10(ratio)) %>% # log ratio is more symmetric
+         tau_k_diff = tau_k_diff * 100,
+         log_tau_k_ratio = log10(tau_k_ratio), # log ratios are more symmetric
+         log_t0.5_mu_ratio = log10(t0.5_mu_ratio)) %>% 
   group_by(reference, species, treatment) %>%
   summarise(
     across(
@@ -8730,48 +8914,71 @@ Table_1 <- bind_rows( # Combine into one tibble
         sd = sd, 
         median = median
       )
-    ), # This is the probability of tau > k
-    P = mean( diff > 0 ), # same as ratio > 1 and log_ratio > 0
+    ), 
+    P_tau_k = mean( tau_k_diff > 0 ), # Probability that tau > k
+    P_t0.5_mu = mean( t0.5_mu_diff > 0 ), # Probability that t0.5 > mu
     n = n()
   ) %>%
   ungroup() %>%
   mutate(
     across(
-      c(starts_with("t0.5"), starts_with("k"), starts_with("alpha"), 
-        starts_with("mu"), starts_with("tau"), starts_with("diff"), 
-        starts_with("ratio"), starts_with("log_ratio"), P),
-      ~if_else(.x < 100, signif(.x, 2), signif(.x, 3))
+      where(is.numeric),
+      ~ case_when(
+        .x < 100 ~ signif(.x, 2),
+        .x < 1e3 ~ signif(.x, 3),
+        T ~ signif(.x, 4)
+      )
     ),
-    t0.5 = glue("{t0.5_mean} ± {t0.5_sd} ({t0.5_median})"),
     k = glue("{k_mean} ± {k_sd} ({k_median})"),
+    t0.5 = glue("{t0.5_mean} ± {t0.5_sd} ({t0.5_median})"),
     alpha = glue("{alpha_mean} ± {alpha_sd} ({alpha_median})"),
     mu = glue("{mu_mean} ± {mu_sd} ({mu_median})"),
     tau = glue("{tau_mean} ± {tau_sd} ({tau_median})"),
-    diff = glue("{diff_mean} ± {diff_sd} ({diff_median})"),
-    ratio = glue("{ratio_mean} ± {ratio_sd} ({ratio_median})"),
-    log_ratio = glue("{log_ratio_mean} ± {log_ratio_sd} ({log_ratio_median})")
+    tau_k_diff = glue("{tau_k_diff_mean} ± {tau_k_diff_sd} ({tau_k_diff_median})"),
+    t0.5_mu_diff = glue("{t0.5_mu_diff_mean} ± {t0.5_mu_diff_sd} ({t0.5_mu_diff_median})"),
+    log_tau_k_ratio = glue("{log_tau_k_ratio_mean} ± {log_tau_k_ratio_sd}"),
+    log_t0.5_mu_ratio = glue("{log_t0.5_mu_ratio_mean} ± {log_t0.5_mu_ratio_sd}")
   ) %>%
   select(!(contains("mean") | contains("sd") | contains("median"))) %T>%
+  print(n = 70)
+
+# 7.1.4 Split into tables ####
+Table_1 <- parameters_summary %>%
+  select(reference, species, treatment, k, alpha, mu, tau) %>%
+  arrange(reference) %T>%
+  print()
+  
+Table_2 <- parameters_summary %>%
+  select(reference, species, treatment, log_tau_k_ratio, P_tau_k, 
+         log_t0.5_mu_ratio, P_t0.5_mu) %>%
+  arrange(reference) %T>%
   print()
 
-# 7.1.4 Save ####
-# Save fill Table 1 as csv
+# 7.1.5 Save ####
+# Save tables as csv
 Table_1 %>%
   write_csv(here("Tables", "Table_1.csv"))
 
-# Save reduced Table 1 as docx
+Table_2 %>%
+  write_csv(here("Tables", "Table_2.csv"))
+
+# Save tables without prior and global as docx
 require(officer)
 read_docx() %>%
   body_add_table(
     value = Table_1 %>%
       filter(!species %in% c("Prior", "Global") &
-               !treatment %in% c("Prior", "Global")) %>%
-      select(-c(n, t0.5, diff, ratio)) %>%
-      mutate(reference = reference %>% 
-               fct_relevel("Brouwer", "Hamersley", "Bettignies", "Bourguès")) %>%
-      arrange(reference)
+               !treatment %in% c("Prior", "Global"))
   ) %>%
   print(target = here("Tables", "Table_1.docx"))
+
+read_docx() %>%
+  body_add_table(
+    value = Table_2 %>%
+      filter(!species %in% c("Prior", "Global") &
+               !treatment %in% c("Prior", "Global"))
+  ) %>%
+  print(target = here("Tables", "Table_2.docx"))
 
 # 7.2 Table S1 ####
 # 7.2.1 Load data ####
@@ -9448,16 +9655,24 @@ Fig_S2_k <- Brouwer_k_prior_posterior %>%
     geom_line(aes(t, -k, colour = treatment)) +
     geom_ribbon(aes(t, ymin = -.upper, ymax = -.lower,
                     alpha = factor(.width), fill = treatment)) +
+    geom_density(data = Brouwer_k_prior_posterior %>%
+                   filter(treatment != "Prior") %>%
+                   mutate(t0.5 = log(2)/k), # Calculate half-life
+                 aes(x = t0.5, y = after_stat(density) * 0.2, fill = treatment),
+                 alpha = 0.8, colour = NA, position = position_nudge(y = -0.09), 
+                 bw = 320*0.005) +
     scale_colour_manual(values = c("#81a512", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 320, 80)) +
+    scale_x_continuous(breaks = seq(0, 320, 80),
+                       limits = c(0, 320),
+                       oob = scales::oob_keep) +
     scale_y_continuous(breaks = seq(-0.09, 0, 0.03),
                        labels = scales::label_number(accuracy = c(rep(0.01, 3), 1),
                                                      style_negative = "minus")) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic("k")*" (day"^-1*")")) +
-    coord_cartesian(xlim = c(0, 320), ylim = c(-0.09, 0),
+    coord_cartesian(ylim = c(-0.09, 0),
                     expand = F, clip = "off") +
     mytheme +
     theme(legend.position = "none",
@@ -9470,11 +9685,6 @@ Fig_S2_mu <- Brouwer_k_prediction %>%
     geom_line(aes(t, m_mu, colour = treatment)) +
     geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
                     alpha = factor(.width), fill = treatment)) +
-    geom_density(data = Brouwer_k_prior_posterior %>%
-                   filter(treatment != "Prior") %>%
-                   mutate(t0.5 = log(2)/k), # Calculate half-life
-                 aes(x = t0.5, y = after_stat(density) * 1.5, fill = treatment),
-                 alpha = 0.8, colour = NA, bw = 320*0.005) +
     geom_vline(xintercept = 0) +
     geom_pointrange(data = data_mean_sd %>%
                       filter(reference == "Brouwer 1996") %>%
@@ -9488,14 +9698,12 @@ Fig_S2_mu <- Brouwer_k_prediction %>%
     scale_colour_manual(values = c("#81a512", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 320, 80),
-                       limits = c(0, 320),
-                       oob = scales::oob_keep) +
+    scale_x_continuous(breaks = seq(0, 320, 80)) +
     scale_y_continuous(breaks = seq(0, 1.2, 0.4),
                        labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic(bar("m")))) +
-    coord_cartesian(ylim = c(0, 1.2),
+    coord_cartesian(xlim = c(0, 320), ylim = c(0, 1.2),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.x = element_blank(),
@@ -9560,16 +9768,22 @@ Fig_3a_k <- Hamersley_prediction %>%
     geom_line(aes(t, k, colour = treatment)) +
     geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper,
                     alpha = factor(.width), fill = treatment)) +
+    geom_density(data = Hamersley_prior_posterior %>%
+                   filter(!treatment %in% c("Prior", "Global")),
+                 aes(x = mu, y = after_stat(density) * 0.055, fill = treatment),
+                 alpha = 0.8, colour = NA, bw = 25*0.005, 
+                 position = position_nudge(y = -0.17)) +
     scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 25, 5)) +
-    scale_y_continuous(breaks = seq(-0.16, 0.02, 0.06),
-                       labels = scales::label_number(accuracy = c(0.01, 0.1, 0.01, 0.01),
-                                                     style_negative = "minus")) +
+    scale_x_continuous(breaks = seq(0, 25, 5),
+                       limits = c(0, 25),
+                       oob = scales::oob_keep) +
+    scale_y_continuous(breaks = seq(-0.17, 0.01, 0.06),
+                       labels = scales::label_number(style_negative = "minus")) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic("k")*" (day"^-1*")")) +
-    coord_cartesian(xlim = c(0, 25), ylim = c(-0.16, 0.02),
+    coord_cartesian(ylim = c(-0.17, 0.01),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.y = element_text(vjust = -1),
@@ -9586,28 +9800,22 @@ Fig_3a_mu <- Hamersley_prediction %>%
                  droplevels(),
                aes(t, m, colour = treatment), 
                size = 1, shape = 16, alpha = 0.6) +
-    geom_density(data = Hamersley_prior_posterior %>%
-                   filter(!treatment %in% c("Prior", "Global")),
-                 aes(x = mu, y = after_stat(density) * 0.3, fill = treatment),
-                 alpha = 0.8, colour = NA, bw = 25*0.005) +
     scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 25, 5),
-                       limits = c(0, 25),
-                       oob = scales::oob_keep) +
+    scale_x_continuous(breaks = seq(0, 25, 5)) +
     scale_y_continuous(breaks = seq(0, 1, 0.25),
                        labels = scales::label_number(accuracy = c(1, 0.01, 0.1, 0.01, 1))) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic(bar("m")))) +
-    coord_cartesian(ylim = c(0, 1),
+    coord_cartesian(xlim = c(0, 25), ylim = c(0, 1),
                     expand = F, clip = "off") +
     mytheme +
     theme(plot.margin = margin(0.2, 0.25, 0, 0, unit = "cm"),
           legend.position.inside = c(0.89, 0.89),
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
-          axis.title.y = element_text(vjust = -.33))
+          axis.title.y = element_text(vjust = 0))
 
 Fig_3b_k <- Bettignies_prediction %>%
   filter(!treatment %in% c("Prior", "Global")) %>%
@@ -9618,15 +9826,24 @@ Fig_3b_k <- Bettignies_prediction %>%
     geom_ribbon(aes(t, ymin = k.lower, ymax = k.upper,
                     group = interaction(treatment, .width),
                     alpha = factor(.width), fill = treatment2)) +
+    geom_density(data = Bettignies_prior_posterior %>%
+                   filter(!treatment %in% c("Prior", "Global")) %>%
+                   mutate(treatment2 = treatment %>% str_extract("^\\S+")),
+                 aes(x = mu, y = after_stat(density) * 0.35, 
+                     group = treatment, fill = treatment2),
+                 alpha = 0.8, colour = NA, bw = 180*0.005, 
+                 position = position_nudge(y = -0.08)) +
     scale_colour_manual(values = c("#81a512", "#afab00")) +
     scale_fill_manual(values = c("#81a512", "#afab00")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 180, 30)) +
-    scale_y_continuous(breaks = seq(-0.05, 0.01, 0.02),
+    scale_x_continuous(breaks = seq(0, 180, 30),
+                       limits = c(0, 180),
+                       oob = scales::oob_keep) +
+    scale_y_continuous(breaks = seq(-0.08, 0.01, 0.03),
                        labels = scales::label_number(style_negative = "minus")) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic("k")*" (day"^-1*")")) +
-    coord_cartesian(xlim = c(0, 180), ylim = c(-0.05, 0.01),
+    coord_cartesian(ylim = c(-0.08, 0.01),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.y = element_text(vjust = -1),
@@ -9647,30 +9864,22 @@ Fig_3b_mu <- Bettignies_prediction %>%
                  mutate(treatment2 = treatment %>% str_extract("^\\S+")),
                aes(t, m, colour = treatment2), 
                size = 1, shape = 16, alpha = 0.6) +
-    geom_density(data = Bettignies_prior_posterior %>%
-                   filter(!treatment %in% c("Prior", "Global")) %>%
-                   mutate(treatment2 = treatment %>% str_extract("^\\S+")),
-                 aes(x = mu, y = after_stat(density) * 2, 
-                     group = treatment, fill = treatment2),
-                 alpha = 0.8, colour = NA, bw = 180*0.005) +
     scale_colour_manual(values = c("#81a512", "#afab00")) +
     scale_fill_manual(values = c("#81a512", "#afab00")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 180, 30),
-                       limits = c(0, 180),
-                       oob = scales::oob_keep) +
+    scale_x_continuous(breaks = seq(0, 180, 30)) +
     scale_y_continuous(breaks = seq(0, 1.2, 0.4),
                        labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic(bar("m")))) +
-    coord_cartesian(ylim = c(0, 1.2),
+    coord_cartesian(xlim = c(0, 180), ylim = c(0, 1.2),
                     expand = F, clip = "off") +
     mytheme +
     theme(plot.margin = margin(0.2, 0.25, 0, 0, unit = "cm"),
           legend.position = "none",
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
-          axis.title.y = element_text(vjust = -.33))
+          axis.title.y = element_text(vjust = 0))
 
 # Combine components and save
 Fig_3 <- ( Fig_3a_mu / Fig_3a_k / Fig_3b_mu / Fig_3b_k ) +
@@ -9700,16 +9909,23 @@ Fig_S3a_k <- Hamersley_k_prior_posterior %>%
     geom_line(aes(t, -k, colour = treatment)) +
     geom_ribbon(aes(t, ymin = -.upper, ymax = -.lower,
                     alpha = factor(.width), fill = treatment)) +
+    geom_density(data = Hamersley_k_prior_posterior %>%
+                   filter(!treatment %in% c("Prior", "Global")) %>%
+                   mutate(t0.5 = log(2)/k), # Calculate half-life,
+                 aes(x = t0.5, y = after_stat(density) * 0.07, fill = treatment),
+                 alpha = 0.8, colour = NA, bw = 25*0.005, 
+                 position = position_nudge(y = -0.17)) +
     scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 25, 5)) +
-    scale_y_continuous(breaks = seq(-0.16, 0.02, 0.06),
-                       labels = scales::label_number(accuracy = c(0.01, 0.1, 0.01, 0.01),
-                                                     style_negative = "minus")) +
+    scale_x_continuous(breaks = seq(0, 25, 5),
+                       limits = c(0, 25),
+                       oob = scales::oob_keep) +
+    scale_y_continuous(breaks = seq(-0.17, 0.01, 0.06),
+                       labels = scales::label_number(style_negative = "minus")) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic("k")*" (day"^-1*")")) +
-    coord_cartesian(xlim = c(0, 25), ylim = c(-0.16, 0.02),
+    coord_cartesian(ylim = c(-0.17, 0.01),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.y = element_text(vjust = -1),
@@ -9726,29 +9942,22 @@ Fig_S3a_mu <- Hamersley_k_prediction %>%
                  droplevels(),
                aes(t, m, colour = treatment), 
                size = 1, shape = 16, alpha = 0.6) +
-    geom_density(data = Hamersley_k_prior_posterior %>%
-                   filter(!treatment %in% c("Prior", "Global")) %>%
-                   mutate(t0.5 = log(2)/k), # Calculate half-life,
-                 aes(x = t0.5, y = after_stat(density) * 0.3, fill = treatment),
-                 alpha = 0.8, colour = NA, bw = 25*0.005) +
     scale_colour_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_fill_manual(values = c("#81a512", "#afab00", "#5e5003")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 25, 5),
-                       limits = c(0, 25),
-                       oob = scales::oob_keep) +
+    scale_x_continuous(breaks = seq(0, 25, 5)) +
     scale_y_continuous(breaks = seq(0, 1, 0.25),
                        labels = scales::label_number(accuracy = c(1, 0.01, 0.1, 0.01, 1))) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic(bar("m")))) +
-    coord_cartesian(ylim = c(0, 1),
+    coord_cartesian(xlim = c(0, 25), ylim = c(0, 1),
                     expand = F, clip = "off") +
     mytheme +
     theme(plot.margin = margin(0.2, 0.25, 0, 0, unit = "cm"),
           legend.position.inside = c(0.89, 0.89),
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
-          axis.title.y = element_text(vjust = -.33))
+          axis.title.y = element_text(vjust = 0))
 
 Fig_S3b_k <- Bettignies_k_prior_posterior %>%
   group_by(treatment) %>%
@@ -9762,21 +9971,31 @@ Fig_S3b_k <- Bettignies_k_prior_posterior %>%
     geom_ribbon(aes(t, ymin = -.upper, ymax = -.lower,
                     group = interaction(treatment, .width),
                     alpha = factor(.width), fill = treatment2)) +
+    geom_density(data = Bettignies_k_prior_posterior %>%
+                   filter(!treatment %in% c("Prior", "Global")) %>%
+                   mutate(treatment2 = treatment %>% str_extract("^\\S+"),
+                          t0.5 = log(2)/k),
+                 aes(x = t0.5, y = after_stat(density) * 0.25, 
+                     group = treatment, fill = treatment2),
+                 alpha = 0.8, colour = NA, bw = 180*0.005, 
+                 position = position_nudge(y = -0.08)) +
     scale_colour_manual(values = c("#81a512", "#afab00")) +
     scale_fill_manual(values = c("#81a512", "#afab00")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 180, 30)) +
-    scale_y_continuous(breaks = seq(-0.05, 0.01, 0.02),
+    scale_x_continuous(breaks = seq(0, 180, 30),
+                       limits = c(0, 180),
+                       oob = scales::oob_keep) +
+    scale_y_continuous(breaks = seq(-0.08, 0.01, 0.03),
                        labels = scales::label_number(style_negative = "minus")) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic("k")*" (day"^-1*")")) +
-    coord_cartesian(xlim = c(0, 180), ylim = c(-0.05, 0.01),
+    coord_cartesian(ylim = c(-0.08, 0.01),
                     expand = F, clip = "off") +
     mytheme +
     theme(axis.title.y = element_text(vjust = -1),
           legend.position = "none")
 
-Fig_S3b_mu <- Bettignies_prediction %>%
+Fig_S3b_mu <- Bettignies_k_prediction %>%
   filter(!treatment %in% c("Prior", "Global")) %>%
   mutate(treatment2 = treatment %>% str_extract("^\\S+")) %>%
   ggplot() +
@@ -9791,30 +10010,22 @@ Fig_S3b_mu <- Bettignies_prediction %>%
                  mutate(treatment2 = treatment %>% str_extract("^\\S+")),
                aes(t, m, colour = treatment2), 
                size = 1, shape = 16, alpha = 0.6) +
-    geom_density(data = Bettignies_prior_posterior %>%
-                   filter(!treatment %in% c("Prior", "Global")) %>%
-                   mutate(treatment2 = treatment %>% str_extract("^\\S+")),
-                 aes(x = mu, y = after_stat(density) * 2, 
-                     group = treatment, fill = treatment2),
-                 alpha = 0.8, colour = NA, bw = 180*0.005) +
     scale_colour_manual(values = c("#81a512", "#afab00")) +
     scale_fill_manual(values = c("#81a512", "#afab00")) +
     scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
-    scale_x_continuous(breaks = seq(0, 180, 30),
-                       limits = c(0, 180),
-                       oob = scales::oob_keep) +
+    scale_x_continuous(breaks = seq(0, 180, 30)) +
     scale_y_continuous(breaks = seq(0, 1.2, 0.4),
                        labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
     labs(x = expression(italic("t")*" (days)"),
          y = expression(italic(bar("m")))) +
-    coord_cartesian(ylim = c(0, 1.2),
+    coord_cartesian(xlim = c(0, 180), ylim = c(0, 1.2),
                     expand = F, clip = "off") +
     mytheme +
     theme(plot.margin = margin(0.2, 0.25, 0, 0, unit = "cm"),
           legend.position = "none",
           axis.title.x = element_blank(),
           axis.text.x = element_blank(),
-          axis.title.y = element_text(vjust = -.33))
+          axis.title.y = element_text(vjust = 0))
 
 # Combine components and save
 Fig_S3 <- ( Fig_S3a_mu / Fig_S3a_k / Fig_S3b_mu / Fig_S3b_k ) +
@@ -9828,17 +10039,23 @@ Fig_S3 %>%
 
 # 8.3 Season ####
 # 8.3.1 Figure 4 ####
-Fig_5 <- Bourguès_prediction_summary %>%
-  filter(treatment != "Prior") %>%
+# Load predictions
+Bourguès_prediction <- here("RDS", "Bourguès_prediction.rds") %>%
+  read_rds()
+
+# Plot
+Fig_4 <- Bourguès_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
   ggplot() +
     geom_hline(yintercept = 1) +
-    geom_line(aes(t, p, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = p.lower, ymax = p.upper,
+    geom_line(aes(t, m, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m.lower, ymax = m.upper,
                     alpha = factor(.width), fill = treatment)) +
     geom_point(data = data %>%
                  filter(reference == "Bourguès et al. 1996" & t != 0) %>%
                  droplevels(),
-               aes(t, p, colour = treatment), shape = 16, alpha = 0.5) +
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
     geom_text(aes(x = 36, y = 1.1, label = treatment),
               check_overlap = T, size.unit = "pt", size = 8,
               family = "Futura", hjust = 1, vjust = 0) +
@@ -9850,7 +10067,7 @@ Fig_5 <- Bourguès_prediction_summary %>%
     scale_x_continuous(breaks = seq(0, 36, 6)) +
     scale_y_continuous(breaks = seq(0, 1.2, 0.4),
                        labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
-    labs(x = expression(italic("t")*" (d)"),
+    labs(x = expression(italic("t")*" (days)"),
          y = expression(italic(tilde("m")))) +
     coord_cartesian(xlim = c(0, 36), ylim = c(0, 1.2),
                     expand = F, clip = "off") +
@@ -9859,36 +10076,92 @@ Fig_5 <- Bourguès_prediction_summary %>%
     theme(strip.text = element_blank(),
           plot.margin = margin(0.45, 0.45, 0, 0.45, unit = "cm"))
 
-Fig_5 %>%
-  ggsave(filename = "Figure_5.pdf", path = "Figures",
+# Save
+Fig_4 %>%
+  ggsave(filename = "Figure_4.pdf", path = "Figures",
          device = cairo_pdf, width = 10, height = 10, units = "cm")
 
 # 8.3.2 Figure S4 ####
+# Load predictions
+Bourguès_k_prediction <- here("RDS", "Bourguès_k_prediction.rds") %>%
+  read_rds()
+
+# Plot
+Fig_S4 <- Bourguès_k_prediction %>%
+  filter(!treatment %in% c("Prior", "Global")) %>%
+  ggplot() +
+    geom_hline(yintercept = 1) +
+    geom_line(aes(t, m, colour = treatment)) +
+    geom_ribbon(aes(t, ymin = m.lower, ymax = m.upper,
+                    alpha = factor(.width), fill = treatment)) +
+    geom_point(data = data %>%
+                 filter(reference == "Bourguès et al. 1996" & t != 0) %>%
+                 droplevels(),
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
+    geom_text(aes(x = 36, y = 1.1, label = treatment),
+              check_overlap = T, size.unit = "pt", size = 8,
+              family = "Futura", hjust = 1, vjust = 0) +
+    scale_colour_manual(values = c("#81a512", "#f5a54a", "#5e5003", "#6a98b4"),
+                        guide = "none") +
+    scale_fill_manual(values = c("#81a512", "#f5a54a", "#5e5003", "#6a98b4"),
+                      guide = "none") +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    scale_x_continuous(breaks = seq(0, 36, 6)) +
+    scale_y_continuous(breaks = seq(0, 1.2, 0.4),
+                       labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(tilde("m")))) +
+    coord_cartesian(xlim = c(0, 36), ylim = c(0, 1.2),
+                    expand = F, clip = "off") +
+    facet_grid(rows = vars(treatment)) +
+    mytheme +
+    theme(strip.text = element_blank(),
+          plot.margin = margin(0.45, 0.45, 0, 0.45, unit = "cm"))
+
+# Save
+Fig_S4 %>%
+  ggsave(filename = "Figure_S4.pdf", path = "Figures",
+         device = cairo_pdf, width = 10, height = 10, units = "cm")
 
 # 8.4 Light ####
 # 8.4.1 Figure 5 ####
-Fig_4a <- Frontier2021_prediction_summary %>%
-  filter(treatment != "Prior") %>%
+# Load predictions
+Frontier2021_prediction <- here("RDS", "Frontier2021_prediction.rds") %>%
+  read_rds()
+Frontier2021_prediction_replicate <- here("RDS", "Frontier2021_prediction_replicate.rds") %>%
+  read_rds()
+Frontier2022_prediction <- here("RDS", "Frontier2022_prediction.rds") %>%
+  read_rds()
+Frontier2022_prediction_replicate <- here("RDS", "Frontier2022_prediction_replicate.rds") %>%
+  read_rds()
+
+# Plot panels
+Fig_5a <- Frontier2021_prediction %>%
+  filter(!species %in% c("Prior", "Global") & .width == 0.9) %>%
   ggplot() +
     geom_hline(yintercept = 1) +
-    geom_line(aes(t, p, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = p.lower, ymax = p.upper,
-                    alpha = factor(.width), fill = treatment)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    fill = treatment), alpha = 0.3) +
+    geom_line(data = Frontier2021_prediction_replicate %>%
+                filter(treatment != "Prior" & .width == 0.5),
+              aes(t, m_mu, colour = treatment, group = replicate),
+              alpha = 0.6) +
     geom_point(data = data %>%
                  filter(reference == "Frontier et al. 2021" & t != 0) %>%
                  droplevels(),
-               aes(t, p, colour = treatment), shape = 16, alpha = 0.5) +
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
     scale_colour_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
                         guide = "none") +
     scale_fill_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
                       guide = "none") +
-    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
     scale_x_continuous(breaks = seq(0, 100, 20)) +
-    scale_y_continuous(breaks = seq(0, 2.4, 0.8),
-                       labels = scales::label_number(accuracy = c(1, rep(0.1, 3)))) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic(tilde("m")))) +
-    coord_cartesian(xlim = c(0, 100), ylim = c(0, 2.4),
+    scale_y_continuous(breaks = seq(0, 1.5, 0.5),
+                       labels = scales::label_number(accuracy = c(1, 0.1, 1, 0.1))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    coord_cartesian(xlim = c(0, 100), ylim = c(0, 1.5),
                     expand = F, clip = "off") +
     facet_grid2(treatment ~ species,
                 switch = "y",
@@ -9904,27 +10177,30 @@ Fig_4a <- Frontier2021_prediction_summary %>%
     theme(strip.text.x = element_text(face = "italic", hjust = 0),
           plot.margin = margin(0, 0.5, 0, 0.2, unit = "cm"))
 
-Fig_4b <- Frontier2022_prediction_summary %>%
-  filter(treatment != "Prior") %>%
+Fig_5b <- Frontier2022_prediction %>%
+  filter(!species %in% c("Prior", "Global") & .width == 0.9) %>%
   ggplot() +
     geom_hline(yintercept = 1) +
-    geom_line(aes(t, p, colour = treatment)) +
-    geom_ribbon(aes(t, ymin = p.lower, ymax = p.upper,
-                    alpha = factor(.width), fill = treatment)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    fill = treatment), alpha = 0.3) +
+    geom_line(data = Frontier2022_prediction_replicate %>%
+                filter(treatment != "Prior" & .width == 0.5),
+              aes(t, m_mu, colour = treatment, group = replicate),
+              alpha = 0.6) +
     geom_point(data = data %>%
                  filter(reference == "Frontier et al. 2022" & t != 0) %>%
                  droplevels(),
-               aes(t, p, colour = treatment), shape = 16, alpha = 0.5) +
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
     scale_colour_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
                         guide = "none") +
     scale_fill_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
                       guide = "none") +
-    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
     scale_x_continuous(breaks = seq(0, 40, 20)) +
     scale_y_continuous(breaks = seq(0, 1.5, 0.5),
                        labels = scales::label_number(accuracy = c(1, 0.1, 1, 0.1))) +
-    labs(x = expression(italic("t")*" (d)"),
-         y = expression(italic(tilde("m")))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
     coord_cartesian(xlim = c(0, 40), ylim = c(0, 1.5),
                     expand = F, clip = "off") +
     facet_grid2(treatment ~ species,
@@ -9945,22 +10221,363 @@ Fig_4b <- Frontier2022_prediction_summary %>%
     theme(strip.text.x = element_text(face = "italic", hjust = 0),
           plot.margin = margin(0, 0.2, 0, 0.2, unit = "cm"))
 
-Fig_4 <- ( Fig_4a | Fig_4b ) +
+# Combine panels and save
+Fig_5 <- ( Fig_5a | Fig_5b ) +
   plot_layout(widths = c(1, 0.428)) +
   plot_annotation(tag_levels = c("a", "b")) &
   theme(plot.tag = element_text(family = "Futura", size = 12, face = "bold"),
         plot.tag.position = c(-0.018, 0.996))
 
-Fig_4 %>%
-  ggsave(filename = "Figure_4.pdf", path = "Figures",
+Fig_5 %>%
+  ggsave(filename = "Figure_5.pdf", path = "Figures",
          device = cairo_pdf, width = 20, height = 10, units = "cm")
 
 # 8.4.2 Figure S5 ####
+# Load predictions
+Frontier2021_k_prediction <- here("RDS", "Frontier2021_k_prediction.rds") %>%
+  read_rds()
+Frontier2021_k_prediction_replicate <- here("RDS", "Frontier2021_k_prediction_replicate.rds") %>%
+  read_rds()
+Frontier2022_k_prediction <- here("RDS", "Frontier2022_k_prediction.rds") %>%
+  read_rds()
+Frontier2022_k_prediction_replicate <- here("RDS", "Frontier2022_k_prediction_replicate.rds") %>%
+  read_rds()
 
+# Plot panels
+Fig_S5a <- Frontier2021_k_prediction %>%
+  filter(!species %in% c("Prior", "Global") & .width == 0.9) %>%
+  ggplot() +
+    geom_hline(yintercept = 1) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    fill = treatment), alpha = 0.3) +
+    geom_line(data = Frontier2021_k_prediction_replicate %>%
+                filter(treatment != "Prior" & .width == 0.5),
+              aes(t, m_mu, colour = treatment, group = replicate),
+              alpha = 0.6) +
+    geom_point(data = data %>%
+                 filter(reference == "Frontier et al. 2021" & t != 0) %>%
+                 droplevels(),
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
+    scale_colour_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
+                        guide = "none") +
+    scale_fill_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
+                      guide = "none") +
+    scale_x_continuous(breaks = seq(0, 100, 20)) +
+    scale_y_continuous(breaks = seq(0, 1.5, 0.5),
+                       labels = scales::label_number(accuracy = c(1, 0.1, 1, 0.1))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    coord_cartesian(xlim = c(0, 100), ylim = c(0, 1.5),
+                    expand = F, clip = "off") +
+    facet_grid2(treatment ~ species,
+                switch = "y",
+                strip = strip_nested(text_y = element_text(angle = 0, hjust = 0, vjust = 1)),
+                labeller = labeller(
+                  treatment = as_labeller(c(
+                    "0m" = "0 m",
+                    "15m" = "15 m",
+                    "30m" = "30 m"
+                  ))
+                )) +
+    mytheme +
+    theme(strip.text.x = element_text(face = "italic", hjust = 0),
+          plot.margin = margin(0, 0.5, 0, 0.2, unit = "cm"))
+
+Fig_S5b <- Frontier2022_k_prediction %>%
+  filter(!species %in% c("Prior", "Global") & .width == 0.9) %>%
+  ggplot() +
+    geom_hline(yintercept = 1) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    fill = treatment), alpha = 0.3) +
+    geom_line(data = Frontier2022_k_prediction_replicate %>%
+                filter(treatment != "Prior" & .width == 0.5),
+              aes(t, m_mu, colour = treatment, group = replicate),
+              alpha = 0.6) +
+    geom_point(data = data %>%
+                 filter(reference == "Frontier et al. 2022" & t != 0) %>%
+                 droplevels(),
+               aes(t, m, colour = treatment), 
+               size = 1, shape = 16, alpha = 0.6) +
+    scale_colour_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
+                        guide = "none") +
+    scale_fill_manual(values = c("#f5a54a", "#6a98b4", "#2e4a5b"),
+                      guide = "none") +
+    scale_x_continuous(breaks = seq(0, 40, 20)) +
+    scale_y_continuous(breaks = seq(0, 1.5, 0.5),
+                       labels = scales::label_number(accuracy = c(1, 0.1, 1, 0.1))) +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    coord_cartesian(xlim = c(0, 40), ylim = c(0, 1.5),
+                    expand = F, clip = "off") +
+    facet_grid2(treatment ~ species,
+                switch = "y",
+                strip = strip_nested(text_y = element_text(angle = 0, hjust = 0, vjust = 1)),
+                labeller = labeller(
+                  treatment = as_labeller(c(
+                    "0.5m" = "0.5 m",
+                    "1.5m" = "1.5 m",
+                    "3m" = "3 m"
+                  )),
+                  species = as_labeller(c(
+                    "Laminaria hyperborea" = "L. hyperborea",
+                    "Laminaria ochroleuca" = "L. ochroleuca"
+                  ))
+                )) +
+    mytheme +
+    theme(strip.text.x = element_text(face = "italic", hjust = 0),
+          plot.margin = margin(0, 0.2, 0, 0.2, unit = "cm"))
+
+# Combine panels and save
+Fig_S5 <- ( Fig_S5a | Fig_S5b ) +
+  plot_layout(widths = c(1, 0.428)) +
+  plot_annotation(tag_levels = c("a", "b")) &
+  theme(plot.tag = element_text(family = "Futura", size = 12, face = "bold"),
+        plot.tag.position = c(-0.018, 0.996))
+
+Fig_S5 %>%
+  ggsave(filename = "Figure_S5.pdf", path = "Figures",
+         device = cairo_pdf, width = 20, height = 10, units = "cm")
 
 # 8.5 Temperature ####
 # 8.5.1 Figure 6 ####
+# Load predictions
+Vandendriessche_prediction_replicate <- here("RDS", "Vandendriessche_prediction_replicate.rds") %>%
+  read_rds()
+
+# Plot
+Fig_6 <- Vandendriessche_prediction_replicate %>%
+  filter(species != "Prior") %>%
+  mutate(temperature = temperature %>% fct_relevel("5°C"),
+         species_grazing = interaction(species, grazing, sep = " ") %>%
+           fct_relevel("Ascophyllum nodosum Control", "Ascophyllum nodosum Grazed",
+                       "Fucus vesiculosus Control")) %>%
+  ggplot() +
+    geom_hline(yintercept = c(0, 1)) +
+    geom_line(aes(t, m_mu, colour = temperature, group = replicate)) +
+    geom_ribbon(aes(t, ymin = m_mu.lower, ymax = m_mu.upper,
+                    fill = temperature, alpha = factor(.width),
+                    group = interaction(replicate, .width))) +
+    geom_point(data = data %>%
+                 filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
+                 droplevels() %>%
+                 separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+                 mutate(temperature = temperature %>% fct_relevel("5°C"),
+                        species_grazing = interaction(species, grazing, sep = " ") %>%
+                          fct_relevel("Ascophyllum nodosum Control", "Ascophyllum nodosum Grazed",
+                                      "Fucus vesiculosus Control")),
+               aes(t, m, colour = temperature), 
+               size = 1, shape = 16, alpha = 0.6) +
+    geom_text(data = . %>% distinct(temperature, species_grazing) %>%
+                mutate(
+                  label_species = case_when(
+                    temperature == "5°C" & 
+                      species_grazing == "Ascophyllum nodosum Control" ~
+                      "Ascophyllum nodosum",
+                    temperature == "5°C" & 
+                      species_grazing == "Fucus vesiculosus Control" ~
+                      "Fucus vesiculosus"
+                  ),
+                  label_grazing = case_when(
+                    temperature == "5°C" & 
+                      species_grazing %>% str_detect("Control") ~
+                      "Control",
+                    temperature == "5°C" & 
+                      species_grazing %>% str_detect("Grazed") ~
+                      "Grazed"
+                  )
+                ) %>%
+                pivot_longer(cols = contains("label"),
+                             values_to = "label",
+                             names_prefix = "label_") %>%
+                mutate(
+                  y = case_when(
+                    species_grazing %>% str_detect("Asco") &
+                      name == "species" ~ 4,
+                    species_grazing %>% str_detect("Fucus") &
+                      name == "species" ~ 3,
+                    species_grazing == "Ascophyllum nodosum Control" &
+                      name == "grazing" ~ 3.5,
+                    species_grazing == "Ascophyllum nodosum Grazed" &
+                      name == "grazing" ~ 2,
+                    species_grazing == "Fucus vesiculosus Control" &
+                      name == "grazing" ~ 2.5,
+                    species_grazing == "Fucus vesiculosus Grazed" &
+                      name == "grazing" ~ 3
+                  ),
+                  fontface = if_else(name == "species", "italic", "plain")
+                ),
+              aes(x = 3.3, y = y, label = label, fontface = fontface), 
+              family = "Futura", size = 8, size.unit = "pt", hjust = 0, vjust = 1) +
+    scale_colour_manual(values = c("#2e4a5b", "#6a98b4", "#f5a54a", "#d1750c"),
+                        guide = "none") +
+    scale_fill_manual(values = c("#2e4a5b", "#6a98b4", "#f5a54a", "#d1750c"),
+                      guide = "none") +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    facet_grid(species_grazing ~ temperature, scales = "free", space = "free") +
+    facetted_pos_scales(
+      x = list(
+        temperature == "5°C" ~
+          scale_x_continuous(limits = c(0, 240),
+                             breaks = seq(0, 240, by = 30)),
+        temperature == "10°C" ~
+          scale_x_continuous(limits = c(0, 150),
+                             breaks = seq(0, 150, by = 30)),
+        temperature == "15°C" ~
+          scale_x_continuous(limits = c(0, 90),
+                             breaks = seq(0, 90, by = 30)),
+        temperature == "18°C" ~
+          scale_x_continuous(limits = c(0, 120),
+                             breaks = seq(0, 120, by = 30))
+      ),
+      y = list(
+        species_grazing == "Ascophyllum nodosum Control" ~
+          scale_y_continuous(limits = c(0, 4),
+                             breaks = 0:4),
+        species_grazing == "Ascophyllum nodosum Grazed" ~
+          scale_y_continuous(limits = c(0, 2),
+                             breaks = 0:2),
+        species_grazing == "Fucus vesiculosus Control" ~
+          scale_y_continuous(limits = c(0, 3),
+                             breaks = 0:3),
+        species_grazing == "Fucus vesiculosus Grazed" ~
+          scale_y_continuous(limits = c(0, 3),
+                             breaks = 0:3)
+      )
+    ) +
+    coord_cartesian(expand = F, clip = "off") +
+    mytheme +
+    theme(strip.text = element_text(hjust = 0),
+          strip.text.y = element_blank(),
+          plot.margin = margin(0.45, 0.45, 0, 0.45, unit = "cm"))
+
+# Save
+Fig_6 %>%
+  ggsave(filename = "Figure_6.pdf", path = "Figures",
+         device = cairo_pdf, width = 20, height = 12, units = "cm")
+# Warnings can be ignored. They're just about the missing text in most panels.
 
 # 8.5.2 Figure S6 ####
+# Load predictions
+Vandendriessche_k_prediction_replicate <- here("RDS", "Vandendriessche_k_prediction_replicate.rds") %>%
+  read_rds()
 
+# Plot
+Fig_S6 <- Vandendriessche_k_prediction_replicate %>%
+  filter(species != "Prior") %>%
+  mutate(temperature = temperature %>% fct_relevel("5°C"),
+         species_grazing = interaction(species, grazing, sep = " ") %>%
+           fct_relevel("Ascophyllum nodosum Control", "Ascophyllum nodosum Grazed",
+                       "Fucus vesiculosus Control")) %>%
+  ggplot() +
+    geom_hline(yintercept = c(0, 1)) +
+    geom_line(aes(t, m_mu, colour = temperature, group = replicate)) +
+    geom_ribbon(aes(t, ymin = .lower, ymax = .upper,
+                    fill = temperature, alpha = factor(.width),
+                    group = interaction(replicate, .width))) +
+    geom_point(data = data %>%
+                 filter(reference == "Vandendriessche et al. 2007" & t != 0) %>%
+                 droplevels() %>%
+                 separate(treatment, into = c("temperature", "grazing"), sep = " ") %>%
+                 mutate(temperature = temperature %>% fct_relevel("5°C"),
+                        species_grazing = interaction(species, grazing, sep = " ") %>%
+                          fct_relevel("Ascophyllum nodosum Control", "Ascophyllum nodosum Grazed",
+                                      "Fucus vesiculosus Control")),
+               aes(t, m, colour = temperature), 
+               size = 1, shape = 16, alpha = 0.6) +
+    geom_text(data = . %>% distinct(temperature, species_grazing) %>%
+                mutate(
+                  label_species = case_when(
+                    temperature == "5°C" & 
+                      species_grazing == "Ascophyllum nodosum Control" ~
+                      "Ascophyllum nodosum",
+                    temperature == "5°C" & 
+                      species_grazing == "Fucus vesiculosus Control" ~
+                      "Fucus vesiculosus"
+                  ),
+                  label_grazing = case_when(
+                    temperature == "5°C" & 
+                      species_grazing %>% str_detect("Control") ~
+                      "Control",
+                    temperature == "5°C" & 
+                      species_grazing %>% str_detect("Grazed") ~
+                      "Grazed"
+                  )
+                ) %>%
+                pivot_longer(cols = contains("label"),
+                             values_to = "label",
+                             names_prefix = "label_") %>%
+                mutate(
+                  y = case_when(
+                    species_grazing %>% str_detect("Asco") &
+                      name == "species" ~ 4,
+                    species_grazing %>% str_detect("Fucus") &
+                      name == "species" ~ 3,
+                    species_grazing == "Ascophyllum nodosum Control" &
+                      name == "grazing" ~ 3.5,
+                    species_grazing == "Ascophyllum nodosum Grazed" &
+                      name == "grazing" ~ 2,
+                    species_grazing == "Fucus vesiculosus Control" &
+                      name == "grazing" ~ 2.5,
+                    species_grazing == "Fucus vesiculosus Grazed" &
+                      name == "grazing" ~ 3
+                  ),
+                  fontface = if_else(name == "species", "italic", "plain")
+                ),
+              aes(x = 3.3, y = y, label = label, fontface = fontface), 
+              family = "Futura", size = 8, size.unit = "pt", hjust = 0, vjust = 1) +
+    scale_colour_manual(values = c("#2e4a5b", "#6a98b4", "#f5a54a", "#d1750c"),
+                        guide = "none") +
+    scale_fill_manual(values = c("#2e4a5b", "#6a98b4", "#f5a54a", "#d1750c"),
+                      guide = "none") +
+    scale_alpha_manual(values = c(0.5, 0.4, 0.3), guide = "none") +
+    labs(x = expression(italic("t")*" (days)"),
+         y = expression(italic(bar("m")))) +
+    facet_grid(species_grazing ~ temperature, scales = "free", space = "free") +
+    facetted_pos_scales(
+      x = list(
+        temperature == "5°C" ~
+          scale_x_continuous(limits = c(0, 240),
+                             breaks = seq(0, 240, by = 30)),
+        temperature == "10°C" ~
+          scale_x_continuous(limits = c(0, 150),
+                             breaks = seq(0, 150, by = 30)),
+        temperature == "15°C" ~
+          scale_x_continuous(limits = c(0, 90),
+                             breaks = seq(0, 90, by = 30)),
+        temperature == "18°C" ~
+          scale_x_continuous(limits = c(0, 120),
+                             breaks = seq(0, 120, by = 30))
+      ),
+      y = list(
+        species_grazing == "Ascophyllum nodosum Control" ~
+          scale_y_continuous(limits = c(0, 4),
+                             breaks = 0:4),
+        species_grazing == "Ascophyllum nodosum Grazed" ~
+          scale_y_continuous(limits = c(0, 2),
+                             breaks = 0:2),
+        species_grazing == "Fucus vesiculosus Control" ~
+          scale_y_continuous(limits = c(0, 3),
+                             breaks = 0:3),
+        species_grazing == "Fucus vesiculosus Grazed" ~
+          scale_y_continuous(limits = c(0, 3),
+                             breaks = 0:3)
+      )
+    ) +
+    coord_cartesian(expand = F, clip = "off") +
+    mytheme +
+    theme(strip.text = element_text(hjust = 0),
+          strip.text.y = element_blank(),
+          plot.margin = margin(0.45, 0.45, 0, 0.45, unit = "cm"))
 
+# Save
+Fig_S6 %>%
+  ggsave(filename = "Figure_S6.pdf", path = "Figures",
+         device = cairo_pdf, width = 20, height = 12, units = "cm")
+# Warnings can be ignored. They're just about the missing text in most panels.
+
+# Final clean up
+rm(list = ls())
+dev.off()
