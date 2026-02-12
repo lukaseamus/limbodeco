@@ -33,10 +33,10 @@ transformed parameters{
 
 model{
   // Priors
-  log_k_mu ~ normal( log(0.001) , 0.5 );
-  log_k_sigma_s ~ normal( 0 , 0.5 )T[0,];
-  log_k_sigma_r ~ normal( 0 , 0.5 )T[0,];
-  beta_mu ~ normal( 0.5 , 0.3 );
+  log_k_mu ~ normal( log(0.12) , 1 );
+  log_k_sigma_s ~ normal( 0 , 1 )T[0,];
+  log_k_sigma_r ~ normal( 0 , 1 )T[0,];
+  beta_mu ~ normal( 0 , 0.3 );
   beta_sigma ~ normal( 0 , 0.3 )T[0,];
   log_k_z_s ~ normal( 0 , 1 );
   log_k_z_r ~ normal( 0 , 1 );
