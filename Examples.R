@@ -9275,8 +9275,10 @@ temp_graz_effect <- Vandendriessche_prior_posterior_beta %>%
         median = median
       )
     ),
-    P_mu = mean( beta_mu < 0 ) %>% signif(2),
-    P_tau = mean( beta_mu < 0 ) %>% signif(2),
+    P_mu_t = mean( log_mu_t < 0 ) %>% signif(2),
+    P_tau_t = mean( log_tau_t > 0 ) %>% signif(2),
+    P_mu_g = mean( beta_mu < 0 ) %>% signif(2),
+    P_tau_g = mean( beta_tau > 0 ) %>% signif(2),
     n = n()
   ) %>%
   ungroup() %>%
