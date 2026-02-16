@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/1009456410.svg)](https://doi.org/10.5281/zenodo.18654199)
+
 # A model of macroalgal decomposition
 This repository accompanies the article "A model of macroalgal decomposition" in *Ecological Modelling*. I present a model to accurately describe macroalgal decomposition. Published versions of this repository are assigned digital object identifiers and stored on [zenodo.org](https://zenodo.org).
 
