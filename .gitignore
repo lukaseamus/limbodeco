@@ -51,4 +51,7 @@ rsconnect/
 # Temporary Word files
 ~$*.docx
 
+# RDS files
+*.rds
+
 .DS_Store
