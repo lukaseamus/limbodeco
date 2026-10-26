@@ -429,7 +429,7 @@ k2_alpha <- sim %>%
                                                   title.position = "top",
                                                   barheight = unit(0.1, "cm"),
                                                   barwidth = unit(5.67, "cm"))) +
-   scale_x_continuous(breaks = seq(0, 60, 20),
+    scale_x_continuous(breaks = seq(0, 60, 20),
                        limits = c(0, 60)) +
     scale_y_continuous(breaks = seq(-0.2, 0.04, 0.08),
                        limits = c(-0.2, 0.04),
